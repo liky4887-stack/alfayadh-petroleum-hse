@@ -40,7 +40,6 @@ export default function HomeScreen({ navigation }: { navigation: NativeStackNavi
           right={<IconButton icon={<Bell size={22} color={C.inkSecondary} strokeWidth={1.8} />} onPress={() => { haptics.impactMedium(); navigation.navigate('Feed'); }} />}
         />
         <View style={S.body}>
-          {false && (
           <Pressable onPress={() => { haptics.impactMedium(); navigation.navigate('Dashboard'); }} style={({ pressed }) => [S.dashCard, pressed && S.cardPressed]}>
             <View style={S.dashLeft}>
               <View style={S.dashIconWrap}>
@@ -53,7 +52,6 @@ export default function HomeScreen({ navigation }: { navigation: NativeStackNavi
             </View>
             <ChevronRight size={18} color={C.faint} strokeWidth={2} />
           </Pressable>
-          )}
 
           <PromoCarousel onPress={() => { haptics.impactMedium(); navigation.navigate('Feed'); }} />
           <SectionLabel title="Heads up" action="View all" />
@@ -62,12 +60,12 @@ export default function HomeScreen({ navigation }: { navigation: NativeStackNavi
             <HeadsUpCard image={IMG.wetFloor} tag="Heavy storms announced" author="Craig Tiley" status="Not viewed" danger onPress={() => { haptics.impactMedium(); navigation.navigate('Feed'); }} />
           </ScrollView>
           <View style={S.kpiRow}>
-            <KpiCard value={String(safeCount)} label="Safe Reports" onPress={() => { haptics.impactMedium(); navigation.navigate('Dashboard'); }} />
-            <KpiCard value={String(unsafeCount)} label="Unsafe Reports" onPress={() => { haptics.impactMedium(); navigation.navigate('Dashboard'); }} />
+            <KpiCard value={String(safeCount)} label="Safe Reports" onPress={() => { haptics.impactMedium(); navigation.navigate('Actions', { filter: 'safe_reports' }); }} />
+            <KpiCard value={String(unsafeCount)} label="Unsafe Reports" onPress={() => { haptics.impactMedium(); navigation.navigate('Actions', { filter: 'unsafe_reports' }); }} />
           </View>
           <View style={S.kpiRow}>
-            <KpiCard value={String(openCount)} label="Open Issues" onPress={() => { haptics.impactMedium(); navigation.navigate('Dashboard'); }} />
-            <KpiCard value={String(reports.length)} label="Total Reports" onPress={() => { haptics.impactMedium(); navigation.navigate('Dashboard'); }} />
+            <KpiCard value={String(openCount)} label="Open Issues" onPress={() => { haptics.impactMedium(); navigation.navigate('Actions', { filter: 'open_issues' }); }} />
+            <KpiCard value={String(reports.length)} label="Total Reports" onPress={() => { haptics.impactMedium(); navigation.navigate('Actions', { filter: 'total_reports' }); }} />
           </View>
           <View style={S.sectionRow}>
             <Text style={S.sectionLabel}>Today</Text>
