@@ -1,19 +1,21 @@
-import { ScrollView, Text, View, Alert, Pressable, StyleSheet, Image } from 'react-native';
+import { ScrollView, Text, View, Pressable, StyleSheet, Image } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { Plus, MapPin } from '@/lib/icons';
+import { Plus, MapPin } from 'lucide-react';
 import { C, IMG } from '@/theme/colors';
 import { BrandHeader, IconButton } from '@/components/Shared';
 import { useHapticFeedback } from '@/lib/haptics';
+import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import type { RootStackParamList } from '@/navigation/AppNavigation';
 
-export default function AssetScreen() {
+export default function AssetScreen({ navigation }: { navigation: NativeStackNavigationProp<RootStackParamList> }) {
   const haptics = useHapticFeedback();
   return (
     <SafeAreaView style={S.screen} edges={['top']}>
       <BrandHeader
-        title="Profile"
+        title="Assets"
         right={
           <View style={S.headerActions}>
-            <IconButton icon={<Plus size={18} color={C.inkSecondary} strokeWidth={1.8} />} onPress={() => Alert.alert('Filter', 'Showing all scheduled inspections.')} />
+            <IconButton icon={<Plus size={18} color={C.inkSecondary} strokeWidth={1.8} />} onPress={() => { haptics.impactMedium(); navigation.navigate('NewAsset'); }} />
           </View>
         }
       />
@@ -34,6 +36,10 @@ export default function AssetScreen() {
           </View>
           <View style={S.sectionRow}>
             <Text style={S.sectionLabel}>Scheduled</Text>
+            <Pressable onPress={() => { haptics.impactMedium(); navigation.navigate('NewAsset'); }} style={({ pressed }) => [S.addAssetBtn, pressed && S.cardPressed]}>
+              <Plus size={16} color="#FFF" strokeWidth={2.5} />
+              <Text style={S.addAssetText}>Add Asset</Text>
+            </Pressable>
           </View>
           <View style={S.scheduleList}>
             <ScheduleCard title="Replace track chain" tag="Action" meta="Kansas  ·  Low" assignee="Assigned to Jamie Hong" status="To do" tone="orange" />
@@ -83,6 +89,8 @@ const S = StyleSheet.create({
   assetLocationText: { fontSize: 14, fontWeight: '600', color: C.inkSecondary },
   sectionRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginTop: 28, marginBottom: 14 },
   sectionLabel: { fontSize: 22, fontWeight: '800', color: C.ink, letterSpacing: -0.3 },
+  addAssetBtn: { flexDirection: 'row', alignItems: 'center', gap: 6, backgroundColor: C.primary, paddingHorizontal: 14, paddingVertical: 10, borderRadius: 10 },
+  addAssetText: { fontSize: 13, fontWeight: '700', color: '#FFF' },
   scheduleList: { gap: 14, marginTop: 4 },
   scheduleCard: { backgroundColor: C.surface, borderRadius: 18, padding: 18, borderWidth: 1, borderColor: C.border },
   scheduleLast: { marginBottom: 24 },
@@ -97,4 +105,5 @@ const S = StyleSheet.create({
   scheduleUpdated: { fontSize: 13, fontWeight: '400', color: C.muted },
   statusPill: { paddingHorizontal: 10, paddingVertical: 5, borderRadius: 8 },
   statusPillText: { fontSize: 12, fontWeight: '700' },
+  cardPressed: { opacity: 0.6 },
 });

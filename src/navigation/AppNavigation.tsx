@@ -16,6 +16,11 @@ import UnsafeReportScreen from '@/screens/UnsafeReportScreen';
 import AdminScreen from '@/screens/AdminScreen';
 import MediaScreen from '@/screens/MediaScreen';
 import FeedScreen from '@/screens/FeedScreen';
+import NewActionScreen from '@/screens/NewActionScreen';
+import NewAssetScreen from '@/screens/NewAssetScreen';
+import ProfileScreen from '@/screens/ProfileScreen';
+import MediaLibraryScreen from '@/screens/MediaLibraryScreen';
+import HelpScreen from '@/screens/HelpScreen';
 
 import {
   UserRound,
@@ -23,8 +28,8 @@ import {
   Tag,
   GraduationCap,
   MoreHorizontal,
-} from '@/lib/icons';
-import type { LucideIcon } from '@/lib/icons';
+} from 'lucide-react';
+import type { LucideIcon } from 'lucide-react';
 
 export type RootStackParamList = {
   MainTabs: undefined;
@@ -34,6 +39,11 @@ export type RootStackParamList = {
   Admin: undefined;
   Media: undefined;
   Feed: undefined;
+  NewAction: undefined;
+  NewAsset: undefined;
+  Profile: undefined;
+  MediaLibrary: undefined;
+  Help: undefined;
 };
 
 export type TabParamList = {
@@ -95,6 +105,11 @@ export default function Navigation() {
         <Stack.Screen name="Admin" component={AdminScreen} />
         <Stack.Screen name="Media" component={MediaScreen} />
         <Stack.Screen name="Feed" component={FeedScreen} />
+        <Stack.Screen name="NewAction" component={NewActionScreen} />
+        <Stack.Screen name="NewAsset" component={NewAssetScreen} />
+        <Stack.Screen name="Profile" component={ProfileScreen} />
+        <Stack.Screen name="MediaLibrary" component={MediaLibraryScreen} />
+        <Stack.Screen name="Help" component={HelpScreen} />
       </Stack.Navigator>
     </NavigationContainer>
   );
