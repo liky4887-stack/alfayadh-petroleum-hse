@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { View, Text, Pressable, ScrollView, StyleSheet, Alert } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { GraduationCap, ChevronRight, MoreHorizontal } from 'lucide-react';
+import { GraduationCap, ChevronRight, MoreHorizontal } from '@/lib/icons';
 import { C, IMG } from '@/theme/colors';
 import { BrandHeader, IconButton } from '@/components/Shared';
 import { useHapticFeedback } from '@/lib/haptics';

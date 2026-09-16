@@ -1,6 +1,6 @@
 import { ScrollView, Text, View, Alert, Pressable, StyleSheet, Image } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { Plus, MapPin } from 'lucide-react';
+import { Plus, MapPin } from '@/lib/icons';
 import { C, IMG } from '@/theme/colors';
 import { BrandHeader, IconButton } from '@/components/Shared';
 import { useHapticFeedback } from '@/lib/haptics';

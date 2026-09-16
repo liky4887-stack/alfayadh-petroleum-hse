@@ -5,7 +5,6 @@
     "version": "1.0.0",
     "orientation": "portrait",
     "userInterfaceStyle": "light",
-    "newArchEnabled": true,
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "com.alfayadh.hse"
@@ -17,13 +16,13 @@
       }
     },
     "plugins": [
-      "expo-haptics",
       [
         "expo-location",
         {
           "locationAlwaysAndWhenInUsePermission": "Allow Alfayadh HSE to use your location."
         }
-      ]
+      ],
+      "expo-font"
     ]
   }
 }

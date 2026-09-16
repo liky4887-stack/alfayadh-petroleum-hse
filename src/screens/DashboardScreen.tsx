@@ -1,7 +1,7 @@
 import { useEffect, useMemo } from 'react';
 import { Pressable, ScrollView, Text, View, StyleSheet } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { ShieldCheck, AlertTriangle, FileText } from 'lucide-react';
+import { ShieldCheck, AlertTriangle, FileText } from '@/lib/icons';
 import { Dark, formatDate, TYPE_LABELS } from '@/theme/colors';
 import { useHSEStore } from '@/lib/store';
 import { useHapticFeedback } from '@/lib/haptics';

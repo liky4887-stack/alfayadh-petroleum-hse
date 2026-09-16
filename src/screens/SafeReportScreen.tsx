@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { ScrollView, Text, View, Alert, Pressable, StyleSheet } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { Camera, Check } from 'lucide-react';
+import { Camera, Check } from '@/lib/icons';
 import { Dark } from '@/theme/colors';
 import { useHSEStore } from '@/lib/store';
 import { useHapticFeedback } from '@/lib/haptics';

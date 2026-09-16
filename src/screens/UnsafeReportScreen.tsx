@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { ScrollView, Text, View, Alert, Pressable, StyleSheet } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import * as Location from 'expo-location';
-import { Camera, MapPin, AlertTriangle, AlertOctagon, ChevronLeft } from 'lucide-react';
+import { Camera, MapPin, AlertTriangle, AlertOctagon, ChevronLeft } from '@/lib/icons';
 import { Dark } from '@/theme/colors';
 import { DEPARTMENTS, DEPARTMENT_KEYS } from '@/lib/types';
 import type { ReportType, ReportStatus } from '@/lib/types';

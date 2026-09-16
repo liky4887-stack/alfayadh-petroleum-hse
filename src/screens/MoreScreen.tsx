@@ -1,6 +1,6 @@
 import { View, Text, Pressable, StyleSheet, Alert } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { UserRound, Image as ImageIcon, Menu, ChevronRight } from 'lucide-react';
+import { UserRound, Image as ImageIcon, Menu, ChevronRight } from '@/lib/icons';
 import { C } from '@/theme/colors';
 import { BrandHeader } from '@/components/Shared';
 import { useHapticFeedback } from '@/lib/haptics';
