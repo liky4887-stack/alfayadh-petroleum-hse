@@ -1,11 +1,14 @@
 import { useEffect, useMemo } from 'react';
-import { ScrollView, Text, View } from 'react-native';
-import { Colors, TYPE_LABELS } from '@/lib/design';
+import { ScrollView, Text, View, StyleSheet } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
+import { Dark, TYPE_LABELS } from '@/theme/colors';
 import { useHSEStore } from '@/lib/store';
 import { LoadingState } from '@/components/ui';
-import type { ScreenName } from '@/components/Header';
+import { Header } from '@/components/Header';
+import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import type { RootStackParamList } from '@/navigation/AppNavigation';
 
-export function AdminScreen({ onNavigate }: { onNavigate: (s: ScreenName) => void }) {
+export default function AdminScreen({ navigation }: { navigation: NativeStackNavigationProp<RootStackParamList> }) {
   const { reports, loading, loadReports, subscribeToReports } = useHSEStore();
 
   useEffect(() => {
@@ -35,149 +38,115 @@ export function AdminScreen({ onNavigate }: { onNavigate: (s: ScreenName) => voi
     return entries.map(([dept, count]) => ({ dept, count, pct: Math.round((count / max) * 100) }));
   }, [reports]);
 
-  const recentOpen = useMemo(() =>
-    reports.filter((r) => r.status === 'open').slice(0, 10),
-    [reports]
-  );
+  const recentOpen = useMemo(() => reports.filter((r) => r.status === 'open').slice(0, 10), [reports]);
 
   if (loading) {
     return (
-      <View style={{ flex: 1, backgroundColor: Colors.obsidian }}>
-        <LoadingState label="جاري تحميل البيانات..." />
-      </View>
+      <SafeAreaView style={S.screen} edges={['top']}>
+        <Header title="لوحة المسؤول" currentScreen="Admin" navigation={navigation} showBack />
+        <View style={{ flex: 1 }}>
+          <LoadingState label="جاري تحميل البيانات..." />
+        </View>
+      </SafeAreaView>
     );
   }
 
   return (
-    <ScrollView style={{ flex: 1, backgroundColor: Colors.obsidian }}>
-      <View style={{ padding: 20, gap: 24 }}>
-        {/* KPI Row */}
-        <View style={{ flexDirection: 'row', gap: 12 }}>
-          <KPICard label="إجمالي التقارير" value={stats.total} color={Colors.offWhite} />
-          <KPICard label="مفتوحة" value={stats.open} color={Colors.red} />
-          <KPICard label="مغلقة" value={stats.closed} color={Colors.green} />
-        </View>
+    <SafeAreaView style={S.screen} edges={['top']}>
+      <Header title="لوحة المسؤول" currentScreen="Admin" navigation={navigation} showBack />
+      <ScrollView style={S.scroll}>
+        <View style={S.body}>
+          <View style={S.kpiRow}>
+            <KPICard label="إجمالي التقارير" value={stats.total} color={Dark.offWhite} />
+            <KPICard label="مفتوحة" value={stats.open} color={Dark.red} />
+            <KPICard label="مغلقة" value={stats.closed} color={Dark.green} />
+          </View>
+          <View style={S.kpiRow}>
+            <KPICard label="وضع آمن" value={stats.safe} color={Dark.emerald} small />
+            <KPICard label="وضع غير آمن" value={stats.unsafe} color={Dark.red} small />
+          </View>
 
-        {/* Secondary KPIs */}
-        <View style={{ flexDirection: 'row', gap: 12 }}>
-          <KPICard label="وضع آمن" value={stats.safe} color={Colors.emerald} small />
-          <KPICard label="وضع غير آمن" value={stats.unsafe} color={Colors.red} small />
-        </View>
+          <View style={S.section}>
+            <Text style={S.sectionTitle}>الأقسام الأكثر تكراراً للمشاكل</Text>
+            <View style={S.chartCard}>
+              {deptCounts.length === 0 ? (
+                <Text style={S.chartEmpty}>لا توجد بيانات بعد</Text>
+              ) : (
+                deptCounts.map(({ dept, count, pct }) => (
+                  <View key={dept} style={S.barRow}>
+                    <View style={S.barLabel}>
+                      <Text style={S.barDept}>{dept}</Text>
+                      <Text style={S.barCount}>{count}</Text>
+                    </View>
+                    <View style={S.barTrack}>
+                      <View style={[S.barFill, { width: `${pct}%` }]} />
+                    </View>
+                  </View>
+                ))
+              )}
+            </View>
+          </View>
 
-        {/* Bar Chart — Most frequent problem departments */}
-        <View style={{ gap: 12 }}>
-          <Text style={{ color: Colors.steel, fontSize: 14, fontWeight: '700', letterSpacing: 0.3 }}>
-            الأقسام الأكثر تكراراً للمشاكل
-          </Text>
-          <View style={{ borderWidth: 1, borderColor: Colors.graphite, borderRadius: 10, backgroundColor: Colors.slate, padding: 16, gap: 14 }}>
-            {deptCounts.length === 0 ? (
-              <Text style={{ color: Colors.steel, fontSize: 14, textAlign: 'center', paddingVertical: 20 }}>
-                لا توجد بيانات بعد
-              </Text>
+          <View style={S.section}>
+            <Text style={S.sectionTitle}>التقارير المفتوحة — تحتاج تدخل</Text>
+            {recentOpen.length === 0 ? (
+              <View style={S.emptyCard}>
+                <Text style={S.emptyText}>لا توجد تقارير مفتوحة</Text>
+              </View>
             ) : (
-              deptCounts.map(({ dept, count, pct }) => (
-                <View key={dept} style={{ gap: 6 }}>
-                  <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
-                    <Text style={{ color: Colors.offWhite, fontSize: 13, fontWeight: '600' }}>{dept}</Text>
-                    <Text style={{ color: Colors.steel, fontSize: 13, fontWeight: '700', fontVariant: ['tabular-nums'] }}>
-                      {count}
-                    </Text>
+              <View style={S.reportList}>
+                {recentOpen.map((r, i) => (
+                  <View key={r.id} style={[S.reportRow, i < recentOpen.length - 1 && S.reportBorder]}>
+                    <View style={S.reportType}>
+                      <Text style={S.reportTypeText}>{TYPE_LABELS[r.type] ?? r.type}</Text>
+                      {r.department && <Text style={S.reportDept}>{r.department}</Text>}
+                    </View>
+                    <Text numberOfLines={1} style={S.reportNote}>{r.note}</Text>
                   </View>
-                  <View style={{
-                    height: 6,
-                    borderRadius: 3,
-                    backgroundColor: Colors.graphite,
-                    overflow: 'hidden',
-                  }}>
-                    <View style={{
-                      height: '100%',
-                      width: `${pct}%`,
-                      backgroundColor: Colors.emerald,
-                      borderRadius: 3,
-                    }} />
-                  </View>
-                </View>
-              ))
+                ))}
+              </View>
             )}
           </View>
         </View>
-
-        {/* Open Reports List */}
-        <View style={{ gap: 12 }}>
-          <Text style={{ color: Colors.steel, fontSize: 14, fontWeight: '700', letterSpacing: 0.3 }}>
-            التقارير المفتوحة — تحتاج تدخل
-          </Text>
-          {recentOpen.length === 0 ? (
-            <View style={{
-              borderWidth: 1,
-              borderColor: Colors.graphite,
-              borderRadius: 10,
-              backgroundColor: Colors.slate,
-              padding: 20,
-              alignItems: 'center',
-            }}>
-              <Text style={{ color: Colors.green, fontSize: 14, fontWeight: '600' }}>
-                لا توجد تقارير مفتوحة
-              </Text>
-            </View>
-          ) : (
-            <View style={{ borderWidth: 1, borderColor: Colors.graphite, borderRadius: 10, overflow: 'hidden' }}>
-              {recentOpen.map((r, i) => (
-                <View
-                  key={r.id}
-                  style={{
-                    flexDirection: 'row',
-                    alignItems: 'center',
-                    paddingVertical: 14,
-                    paddingHorizontal: 16,
-                    backgroundColor: Colors.slate,
-                    borderBottomWidth: i < recentOpen.length - 1 ? 1 : 0,
-                    borderBottomColor: Colors.graphite,
-                    gap: 12,
-                  }}
-                >
-                  <View style={{ minWidth: 80 }}>
-                    <Text style={{ color: Colors.red, fontSize: 12, fontWeight: '700' }}>
-                      {TYPE_LABELS[r.type] ?? r.type}
-                    </Text>
-                    {r.department && (
-                      <Text style={{ color: Colors.steel, fontSize: 11, marginTop: 2 }}>{r.department}</Text>
-                    )}
-                  </View>
-                  <Text numberOfLines={1} style={{ flex: 1, color: Colors.offWhite, fontSize: 14 }}>
-                    {r.note}
-                  </Text>
-                </View>
-              ))}
-            </View>
-          )}
-        </View>
-      </View>
-    </ScrollView>
+      </ScrollView>
+    </SafeAreaView>
   );
 }
 
 function KPICard({ label, value, color, small }: { label: string; value: number; color: string; small?: boolean }) {
   return (
-    <View style={{
-      flex: 1,
-      borderWidth: 1,
-      borderColor: Colors.graphite,
-      borderRadius: 10,
-      backgroundColor: Colors.slate,
-      paddingVertical: small ? 14 : 20,
-      paddingHorizontal: 16,
-      alignItems: 'flex-start',
-    }}>
-      <Text style={{
-        color,
-        fontSize: small ? 24 : 32,
-        fontWeight: '800',
-        fontVariant: ['tabular-nums'],
-      }}>
-        {value}
-      </Text>
-      <Text style={{ color: Colors.steel, fontSize: 12, marginTop: 4 }}>{label}</Text>
+    <View style={S.kpiCard}>
+      <Text style={[S.kpiValue, { color, fontSize: small ? 24 : 32 }]}>{value}</Text>
+      <Text style={S.kpiLabel}>{label}</Text>
     </View>
   );
 }
+
+const S = StyleSheet.create({
+  screen: { flex: 1, backgroundColor: Dark.obsidian },
+  scroll: { flex: 1 },
+  body: { padding: 20, gap: 24 },
+  kpiRow: { flexDirection: 'row', gap: 12 },
+  kpiCard: { flex: 1, borderWidth: 1, borderColor: Dark.graphite, borderRadius: 10, backgroundColor: Dark.slate, paddingVertical: 20, paddingHorizontal: 16 },
+  kpiValue: { fontWeight: '800', fontVariant: ['tabular-nums'] },
+  kpiLabel: { color: Dark.steel, fontSize: 12, marginTop: 4 },
+  section: { gap: 12 },
+  sectionTitle: { color: Dark.steel, fontSize: 14, fontWeight: '700', letterSpacing: 0.3 },
+  chartCard: { borderWidth: 1, borderColor: Dark.graphite, borderRadius: 10, backgroundColor: Dark.slate, padding: 16, gap: 14 },
+  chartEmpty: { color: Dark.steel, fontSize: 14, textAlign: 'center', paddingVertical: 20 },
+  barRow: { gap: 6 },
+  barLabel: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
+  barDept: { color: Dark.offWhite, fontSize: 13, fontWeight: '600' },
+  barCount: { color: Dark.steel, fontSize: 13, fontWeight: '700', fontVariant: ['tabular-nums'] },
+  barTrack: { height: 6, borderRadius: 3, backgroundColor: Dark.graphite, overflow: 'hidden' },
+  barFill: { height: '100%', backgroundColor: Dark.emerald, borderRadius: 3 },
+  emptyCard: { borderWidth: 1, borderColor: Dark.graphite, borderRadius: 10, backgroundColor: Dark.slate, padding: 20, alignItems: 'center' },
+  emptyText: { color: Dark.green, fontSize: 14, fontWeight: '600' },
+  reportList: { borderWidth: 1, borderColor: Dark.graphite, borderRadius: 10, overflow: 'hidden' },
+  reportRow: { flexDirection: 'row', alignItems: 'center', paddingVertical: 14, paddingHorizontal: 16, backgroundColor: Dark.slate, gap: 12 },
+  reportBorder: { borderBottomWidth: 1, borderBottomColor: Dark.graphite },
+  reportType: { minWidth: 80 },
+  reportTypeText: { color: Dark.red, fontSize: 12, fontWeight: '700' },
+  reportDept: { color: Dark.steel, fontSize: 11, marginTop: 2 },
+  reportNote: { flex: 1, color: Dark.offWhite, fontSize: 14 },
+});
