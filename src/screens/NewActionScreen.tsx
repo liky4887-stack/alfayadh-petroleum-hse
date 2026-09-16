@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { View, Text, ScrollView, Pressable, StyleSheet, TextInput as RNTextInput } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { ChevronRight, Check } from 'lucide-react';
+import { ChevronRight, Check } from '@/lib/icons';
 import { C } from '@/theme/colors';
 import { supabase } from '@/lib/supabase';
 import { useHapticFeedback } from '@/lib/haptics';

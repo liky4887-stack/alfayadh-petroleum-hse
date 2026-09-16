@@ -1,6 +1,6 @@
 import { View, Text, Pressable, StyleSheet } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { Plus, ClipboardCheck } from 'lucide-react';
+import { Plus, ClipboardCheck } from '@/lib/icons';
 import { C } from '@/theme/colors';
 import { BrandHeader, IconButton } from '@/components/Shared';
 import { useHapticFeedback } from '@/lib/haptics';

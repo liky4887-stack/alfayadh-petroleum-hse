@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { ScrollView, Text, View, Alert, Pressable, StyleSheet, Image } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import * as ImagePicker from 'expo-image-picker';
-import { Camera, Check, X } from 'lucide-react';
+import { Camera, Check, X } from '@/lib/icons';
 import { Dark } from '@/theme/colors';
 import { useHSEStore } from '@/lib/store';
 import { useHapticFeedback } from '@/lib/haptics';
@@ -26,7 +26,7 @@ export default function SafeReportScreen({ navigation }: { navigation: NativeSta
       return;
     }
     const result = await ImagePicker.launchImageLibraryAsync({
-      mediaTypes: ImagePicker.MediaTypeOptions.Images,
+      mediaTypes: ['images'],
       quality: 0.8,
     });
     if (!result.canceled && result.assets[0]) {

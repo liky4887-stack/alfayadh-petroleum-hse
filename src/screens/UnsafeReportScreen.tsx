@@ -3,7 +3,7 @@ import { ScrollView, Text, View, Alert, Pressable, StyleSheet, Image } from 'rea
 import { SafeAreaView } from 'react-native-safe-area-context';
 import * as Location from 'expo-location';
 import * as ImagePicker from 'expo-image-picker';
-import { Camera, MapPin, AlertTriangle, AlertOctagon, ChevronLeft, X } from 'lucide-react';
+import { Camera, MapPin, AlertTriangle, AlertOctagon, ChevronLeft, X } from '@/lib/icons';
 import { Dark } from '@/theme/colors';
 import { DEPARTMENTS, DEPARTMENT_KEYS } from '@/lib/types';
 import type { ReportType, ReportStatus } from '@/lib/types';
@@ -62,7 +62,7 @@ export default function UnsafeReportScreen({ navigation }: { navigation: NativeS
       Alert.alert('تنبيه', 'يلزم إذن الوصول للصور');
       return;
     }
-    const result = await ImagePicker.launchImageLibraryAsync({ mediaTypes: ImagePicker.MediaTypeOptions.Images, quality: 0.8 });
+    const result = await ImagePicker.launchImageLibraryAsync({ mediaTypes: ['images'], quality: 0.8 });
     if (!result.canceled && result.assets[0]) {
       setImageUri(result.assets[0].uri);
       haptics.notificationSuccess();

@@ -1,7 +1,7 @@
 import { useState, useRef, useEffect } from 'react';
 import { View, Text, ScrollView, Pressable, StyleSheet, Image, Dimensions, FlatList, ListRenderItem } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { Bell, ChevronRight, BarChart3 } from 'lucide-react';
+import { Bell, ChevronRight, BarChart3 } from '@/lib/icons';
 import { C, IMG } from '@/theme/colors';
 import { BrandHeader, IconButton, Avatar, StatusPill, SectionLabel } from '@/components/Shared';
 import { useHapticFeedback } from '@/lib/haptics';
@@ -40,6 +40,7 @@ export default function HomeScreen({ navigation }: { navigation: NativeStackNavi
           right={<IconButton icon={<Bell size={22} color={C.inkSecondary} strokeWidth={1.8} />} onPress={() => { haptics.impactMedium(); navigation.navigate('Feed'); }} />}
         />
         <View style={S.body}>
+          {false && (
           <Pressable onPress={() => { haptics.impactMedium(); navigation.navigate('Dashboard'); }} style={({ pressed }) => [S.dashCard, pressed && S.cardPressed]}>
             <View style={S.dashLeft}>
               <View style={S.dashIconWrap}>
@@ -52,6 +53,7 @@ export default function HomeScreen({ navigation }: { navigation: NativeStackNavi
             </View>
             <ChevronRight size={18} color={C.faint} strokeWidth={2} />
           </Pressable>
+          )}
 
           <PromoCarousel onPress={() => { haptics.impactMedium(); navigation.navigate('Feed'); }} />
           <SectionLabel title="Heads up" action="View all" />

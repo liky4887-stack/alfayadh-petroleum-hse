@@ -28,8 +28,8 @@ import {
   Tag,
   GraduationCap,
   MoreHorizontal,
-} from 'lucide-react';
-import type { LucideIcon } from 'lucide-react';
+} from '@/lib/icons';
+import type { LucideIcon } from '@/lib/icons';
 
 export type RootStackParamList = {
   MainTabs: undefined;

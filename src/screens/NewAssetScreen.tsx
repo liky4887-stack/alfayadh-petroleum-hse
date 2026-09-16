@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { View, Text, ScrollView, Pressable, StyleSheet, TextInput as RNTextInput, Image } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import * as ImagePicker from 'expo-image-picker';
-import { ChevronRight, Check, Camera } from 'lucide-react';
+import { ChevronRight, Check, Camera } from '@/lib/icons';
 import { C } from '@/theme/colors';
 import { supabase } from '@/lib/supabase';
 import { useHapticFeedback } from '@/lib/haptics';
@@ -41,7 +41,7 @@ export default function NewAssetScreen({ navigation }: { navigation: NativeStack
       setToast({ visible: true, msg: 'Permission required to access photos' });
       return;
     }
-    const result = await ImagePicker.launchImageLibraryAsync({ mediaTypes: ImagePicker.MediaTypeOptions.Images, quality: 0.8 });
+    const result = await ImagePicker.launchImageLibraryAsync({ mediaTypes: ['images'], quality: 0.8 });
     if (!result.canceled && result.assets[0]) {
       setImageUri(result.assets[0].uri);
     }

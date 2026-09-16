@@ -72,3 +72,10 @@ export const Share2 = I('share-outline');
 
 // LucideIcon is used as a type in AppNavigation.tsx
 export type LucideIcon = React.ComponentType<IconProps>;
+
+// --- Additional icons used in newer screens ---
+export const Bug = I('bug-outline');
+export const ChevronDown = I('chevron-down');
+export const Mail = I('mail-outline');
+export const Phone = I('call-outline');
+export const Shield = I('shield-outline');

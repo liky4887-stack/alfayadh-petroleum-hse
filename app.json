@@ -22,7 +22,12 @@
           "locationAlwaysAndWhenInUsePermission": "Allow Alfayadh HSE to use your location."
         }
       ],
-      "expo-font"
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "Allow Alfayadh HSE to access your photos for safety reports."
+        }
+      ]
     ]
   }
 }
