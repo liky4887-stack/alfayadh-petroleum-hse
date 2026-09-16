@@ -26,7 +26,6 @@ import {
   Play,
   Plus,
   Send,
-  Sparkles,
   Tag,
   Trash2,
   UserRound,
@@ -140,7 +139,7 @@ function HomeScreen({ onFeed, onMedia, onTraining, onIssues }: { onFeed: () => v
     <ScrollView ref={scrollRef} style={S.scroll} contentContainerStyle={S.scrollContent} showsVerticalScrollIndicator={false}>
       <BrandHeader title="Home" right={<IconButton icon={<Bell size={22} color={C.inkSecondary} strokeWidth={1.8} />} onPress={() => Alert.alert('Notifications', 'You are all caught up.')} />} />
       <View style={S.body}>
-        <PromoBanner onPress={onTraining} />
+        <PromoCarousel onPress={onTraining} />
         <SectionLabel title="Heads up" action="View all" />
         <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={S.hStrip}>
           <HeadsUpCard image={IMG.warehouse} tag="New stock delivered" author="Maria Murphy" status="Acknowledged" onPress={onMedia} />
@@ -165,24 +164,52 @@ function HomeScreen({ onFeed, onMedia, onTraining, onIssues }: { onFeed: () => v
   );
 }
 
-function PromoBanner({ onPress }: { onPress: () => void }) {
+const PROMO_SLIDES = [
+  { image: IMG.barrels, badge: 'SAFETY CAMPAIGN', title: 'Q4 Zero-Incident Initiative', subtitle: 'Complete your safety training by October 31' },
+  { image: IMG.worker, badge: 'SAFETY WEEK', title: 'October Safety Awareness', subtitle: 'Join the team-wide safety events this week' },
+  { image: IMG.truck, badge: 'INSPECTION DRIVE', title: 'Equipment Inspection Month', subtitle: 'Ensure all assets are inspected by October 31' },
+];
+
+function PromoCarousel({ onPress }: { onPress: () => void }) {
+  const [active, setActive] = useState(0);
+  const slideW = 390;
   return (
-    <Pressable onPress={onPress} style={({ pressed }) => [S.promoBanner, pressed && S.cardPressed]}>
-      <Image source={{ uri: IMG.barrels }} style={S.promoImage} />
-      <View style={S.promoOverlay} />
-      <View style={S.promoContent}>
-        <View style={S.promoBadge}>
-          <Sparkles size={12} color={C.surface} strokeWidth={2} />
-          <Text style={S.promoBadgeText}>SAFETY CAMPAIGN</Text>
-        </View>
-        <Text style={S.promoTitle}>Q4 Zero-Incident Initiative</Text>
-        <Text style={S.promoSubtitle}>Complete your safety training by October 31</Text>
-        <View style={S.promoCta}>
-          <Text style={S.promoCtaText}>Start training</Text>
-          <ChevronRight size={15} color={C.accent} strokeWidth={2.5} />
-        </View>
+    <View style={S.promoWrap}>
+      <ScrollView
+        horizontal
+        pagingEnabled
+        showsHorizontalScrollIndicator={false}
+        onScroll={(e) => {
+          const idx = Math.round(e.nativeEvent.contentOffset.x / slideW);
+          if (idx !== active) setActive(idx);
+        }}
+        scrollEventThrottle={16}
+        contentContainerStyle={S.promoStrip}
+      >
+        {PROMO_SLIDES.map((slide) => (
+          <Pressable key={slide.title} onPress={onPress} style={({ pressed }) => [S.promoBanner, { width: slideW }, pressed && S.cardPressed]}>
+            <Image source={{ uri: slide.image }} style={S.promoImage} />
+            <View style={S.promoOverlay} />
+            <View style={S.promoContent}>
+              <View style={S.promoBadge}>
+                <Text style={S.promoBadgeText}>{slide.badge}</Text>
+              </View>
+              <Text style={S.promoTitle}>{slide.title}</Text>
+              <Text style={S.promoSubtitle}>{slide.subtitle}</Text>
+              <View style={S.promoCta}>
+                <Text style={S.promoCtaText}>Start training</Text>
+                <ChevronRight size={15} color={C.accent} strokeWidth={2.5} />
+              </View>
+            </View>
+          </Pressable>
+        ))}
+      </ScrollView>
+      <View style={S.promoDots}>
+        {PROMO_SLIDES.map((_, i) => (
+          <View key={i} style={[S.promoDot, i === active && S.promoDotActive]} />
+        ))}
       </View>
-    </Pressable>
+    </View>
   );
 }
 
@@ -605,17 +632,22 @@ const S = StyleSheet.create({
   sectionLabel: { fontSize: 22, fontWeight: '800', color: C.ink, letterSpacing: -0.3 },
   sectionAction: { fontSize: 14, fontWeight: '600', color: C.accent },
 
-  // Promo banner
-  promoBanner: { height: 168, borderRadius: 20, overflow: 'hidden', position: 'relative', marginBottom: 8, marginTop: 4 },
+  // Promo carousel
+  promoWrap: { marginTop: 4, marginBottom: 8 },
+  promoStrip: { gap: 0 },
+  promoBanner: { height: 168, borderRadius: 20, overflow: 'hidden', position: 'relative' },
   promoImage: { width: '100%', height: '100%', resizeMode: 'cover' },
   promoOverlay: { position: 'absolute', inset: 0, backgroundColor: 'rgba(8,42,66,0.78)' },
   promoContent: { position: 'absolute', inset: 0, padding: 20, justifyContent: 'center' },
-  promoBadge: { flexDirection: 'row', alignItems: 'center', gap: 5, backgroundColor: 'rgba(255,255,255,0.18)', paddingHorizontal: 10, paddingVertical: 5, borderRadius: 20, alignSelf: 'flex-start' },
+  promoBadge: { backgroundColor: 'rgba(255,255,255,0.18)', paddingHorizontal: 10, paddingVertical: 5, borderRadius: 20, alignSelf: 'flex-start' },
   promoBadgeText: { fontSize: 10, fontWeight: '800', color: C.surface, letterSpacing: 1.2 },
   promoTitle: { fontSize: 22, fontWeight: '800', color: C.surface, letterSpacing: -0.3, marginTop: 12, lineHeight: 28 },
   promoSubtitle: { fontSize: 14, fontWeight: '500', color: 'rgba(255,255,255,0.82)', marginTop: 6 },
   promoCta: { flexDirection: 'row', alignItems: 'center', gap: 4, backgroundColor: C.surface, paddingHorizontal: 14, paddingVertical: 8, borderRadius: 20, alignSelf: 'flex-start', marginTop: 14 },
   promoCtaText: { fontSize: 13, fontWeight: '800', color: C.accent },
+  promoDots: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6, marginTop: 10 },
+  promoDot: { width: 7, height: 7, borderRadius: 4, backgroundColor: C.borderStrong },
+  promoDotActive: { width: 20, backgroundColor: C.accent },
 
   // Heads-up cards
   hStrip: { paddingStart: 20, paddingEnd: 20, gap: 16 },
