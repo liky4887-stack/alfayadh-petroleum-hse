@@ -1,5 +1,5 @@
-import { Pressable, Text, View, TextInput as RNTextInput } from 'react-native';
-import { Colors } from '@/lib/design';
+import { Pressable, StyleSheet, Text, View, TextInput as RNTextInput, ActivityIndicator } from 'react-native';
+import { Dark } from '@/theme/colors';
 
 interface ButtonProps {
   label: string;
@@ -12,35 +12,29 @@ interface ButtonProps {
 
 export function Button({ label, onPress, variant = 'primary', disabled, fullWidth, icon }: ButtonProps) {
   const bg =
-    variant === 'primary' ? Colors.emerald
-    : variant === 'danger' ? Colors.red
-    : variant === 'secondary' ? Colors.slate
+    variant === 'primary' ? Dark.emerald
+    : variant === 'danger' ? Dark.red
+    : variant === 'secondary' ? Dark.slate
     : 'transparent';
   const borderColor =
-    variant === 'primary' ? Colors.emerald
-    : variant === 'danger' ? Colors.red
-    : variant === 'secondary' ? Colors.graphite
-    : Colors.graphite;
-  const textColor = variant === 'ghost' ? Colors.steel : Colors.offWhite;
-  const hoverBg =
-    variant === 'primary' ? Colors.emeraldHover
-    : variant === 'danger' ? Colors.redHover
-    : variant === 'secondary' ? Colors.graphiteLight
-    : Colors.slate;
+    variant === 'primary' ? Dark.emerald
+    : variant === 'danger' ? Dark.red
+    : variant === 'secondary' ? Dark.graphite
+    : Dark.graphite;
+  const textColor = variant === 'ghost' ? Dark.steel : Dark.offWhite;
 
   return (
     <Pressable
       onPress={onPress}
       disabled={disabled}
-      style={({ hovered, pressed }) => ({
-        backgroundColor: pressed ? hoverBg : hovered ? hoverBg : bg,
+      style={({ pressed }) => ({
+        backgroundColor: pressed ? Dark.emeraldHover : bg,
         borderColor,
         borderWidth: 1,
         borderRadius: 10,
         paddingVertical: 16,
         paddingHorizontal: 20,
         minHeight: 48,
-        minWidth: 48,
         alignItems: 'center',
         justifyContent: 'center',
         flexDirection: 'row',
@@ -63,22 +57,22 @@ interface ChipProps {
 }
 
 export function Chip({ label, selected, onPress, color }: ChipProps) {
-  const accent = color ?? Colors.emerald;
+  const accent = color ?? Dark.emerald;
   return (
     <Pressable
       onPress={onPress}
-      style={({ hovered, pressed }) => ({
+      style={({ pressed }) => ({
         paddingVertical: 10,
         paddingHorizontal: 16,
         borderRadius: 8,
         borderWidth: 1,
-        borderColor: selected ? accent : Colors.graphite,
+        borderColor: selected ? accent : Dark.graphite,
         backgroundColor: selected ? `${accent}22` : 'transparent',
-        opacity: pressed ? 0.7 : hovered ? 0.85 : 1,
+        opacity: pressed ? 0.7 : 1,
       })}
     >
       <Text style={{
-        color: selected ? accent : Colors.offWhite,
+        color: selected ? accent : Dark.offWhite,
         fontSize: 14,
         fontWeight: selected ? '700' : '400',
       }}>
@@ -90,7 +84,7 @@ export function Chip({ label, selected, onPress, color }: ChipProps) {
 
 export function StatusBadge({ status }: { status: 'open' | 'closed' }) {
   const isOpen = status === 'open';
-  const color = isOpen ? Colors.red : Colors.green;
+  const color = isOpen ? Dark.red : Dark.green;
   return (
     <View style={{
       paddingVertical: 3,
@@ -100,12 +94,7 @@ export function StatusBadge({ status }: { status: 'open' | 'closed' }) {
       borderColor: `${color}55`,
       backgroundColor: `${color}22`,
     }}>
-      <Text style={{
-        color,
-        fontSize: 11,
-        fontWeight: '700',
-        fontVariant: ['tabular-nums'],
-      }}>
+      <Text style={{ color, fontSize: 11, fontWeight: '700', fontVariant: ['tabular-nums'] }}>
         {isOpen ? 'مفتوحة' : 'مغلقة'}
       </Text>
     </View>
@@ -115,17 +104,8 @@ export function StatusBadge({ status }: { status: 'open' | 'closed' }) {
 export function LoadingState({ label }: { label?: string }) {
   return (
     <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center', paddingVertical: 60, gap: 16 }}>
-      <View style={{
-        width: 28,
-        height: 28,
-        borderRadius: 14,
-        borderWidth: 2,
-        borderColor: Colors.graphite,
-        borderTopColor: Colors.emerald,
-        animation: 'spin 0.8s linear infinite',
-      }} />
-      <Text style={{ color: Colors.steel, fontSize: 14 }}>{label ?? 'جاري التحميل...'}</Text>
-      <style>{`@keyframes spin { to { transform: rotate(360deg) } }`}</style>
+      <ActivityIndicator size="small" color={Dark.emerald} />
+      <Text style={{ color: Dark.steel, fontSize: 14 }}>{label ?? 'جاري التحميل...'}</Text>
     </View>
   );
 }
@@ -142,9 +122,9 @@ export function TextInput({ value, onChangeText, placeholder, multiline, numberO
   return (
     <View style={{
       borderWidth: 1,
-      borderColor: Colors.graphite,
+      borderColor: Dark.graphite,
       borderRadius: 10,
-      backgroundColor: Colors.slate,
+      backgroundColor: Dark.slate,
       paddingHorizontal: 14,
       paddingVertical: 12,
       minHeight: 48,
@@ -153,15 +133,14 @@ export function TextInput({ value, onChangeText, placeholder, multiline, numberO
         value={value}
         onChangeText={onChangeText}
         placeholder={placeholder}
-        placeholderTextColor={Colors.steel}
+        placeholderTextColor={Dark.steel}
         multiline={multiline}
         numberOfLines={numberOfLines}
         textAlign="right"
         style={{
-          color: Colors.offWhite,
+          color: Dark.offWhite,
           fontSize: 15,
           fontWeight: '400',
-          lineHeight: 1.6,
           textAlign: 'right',
           minHeight: multiline ? 100 : undefined,
         }}

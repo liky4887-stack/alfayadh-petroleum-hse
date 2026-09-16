@@ -1,4 +1,5 @@
 import { create } from 'zustand';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { supabase } from './supabase';
 import type { HSEReport, QueuedReport, ReportType, ReportStatus } from './types';
 
@@ -28,24 +29,24 @@ interface HSEStore {
 
 const QUEUE_KEY = 'hse_offline_queue';
 
-function getQueue(): QueuedReport[] {
+async function getQueue(): Promise<QueuedReport[]> {
   try {
-    const raw = localStorage.getItem(QUEUE_KEY);
+    const raw = await AsyncStorage.getItem(QUEUE_KEY);
     return raw ? JSON.parse(raw) : [];
   } catch {
     return [];
   }
 }
 
-function saveQueue(q: QueuedReport[]) {
-  localStorage.setItem(QUEUE_KEY, JSON.stringify(q));
+async function saveQueue(q: QueuedReport[]) {
+  await AsyncStorage.setItem(QUEUE_KEY, JSON.stringify(q));
 }
 
 export const useHSEStore = create<HSEStore>((set, get) => ({
   reports: [],
   loading: true,
-  isOnline: navigator.onLine,
-  syncPending: getQueue().length,
+  isOnline: true,
+  syncPending: 0,
 
   loadReports: async () => {
     const { data, error } = await supabase
@@ -54,7 +55,6 @@ export const useHSEStore = create<HSEStore>((set, get) => ({
       .order('created_at', { ascending: false })
       .limit(100);
     if (error) {
-      console.error('Failed to load reports:', error.message);
       set({ loading: false });
       return;
     }
@@ -65,7 +65,7 @@ export const useHSEStore = create<HSEStore>((set, get) => ({
     const { isOnline } = get();
 
     if (!isOnline) {
-      const queue = getQueue();
+      const queue = await getQueue();
       const item: QueuedReport = {
         tempId: `temp_${Date.now()}_${Math.random().toString(36).slice(2)}`,
         data: {
@@ -82,7 +82,7 @@ export const useHSEStore = create<HSEStore>((set, get) => ({
         createdAt: new Date().toISOString(),
       };
       queue.push(item);
-      saveQueue(queue);
+      await saveQueue(queue);
       set({ syncPending: queue.length });
       return { success: true, offline: true };
     }
@@ -104,8 +104,7 @@ export const useHSEStore = create<HSEStore>((set, get) => ({
       .single();
 
     if (error) {
-      console.error('Insert failed:', error.message);
-      const queue = getQueue();
+      const queue = await getQueue();
       const item: QueuedReport = {
         tempId: `temp_${Date.now()}_${Math.random().toString(36).slice(2)}`,
         data: {
@@ -122,7 +121,7 @@ export const useHSEStore = create<HSEStore>((set, get) => ({
         createdAt: new Date().toISOString(),
       };
       queue.push(item);
-      saveQueue(queue);
+      await saveQueue(queue);
       set({ syncPending: queue.length });
       return { success: true, offline: true };
     }
@@ -166,7 +165,7 @@ export const useHSEStore = create<HSEStore>((set, get) => ({
   },
 
   flushQueue: async () => {
-    const queue = getQueue();
+    const queue = await getQueue();
     if (queue.length === 0) return;
 
     const remaining: QueuedReport[] = [];
@@ -186,7 +185,7 @@ export const useHSEStore = create<HSEStore>((set, get) => ({
         remaining.push(item);
       }
     }
-    saveQueue(remaining);
+    await saveQueue(remaining);
     set({ syncPending: remaining.length });
     if (remaining.length < queue.length) {
       get().loadReports();

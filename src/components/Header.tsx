@@ -1,95 +1,62 @@
-import { Pressable, Text, View } from 'react-native';
-import { Colors } from '@/lib/design';
+import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { ArrowLeft, BarChart3 } from 'lucide-react';
+import { Dark } from '@/theme/colors';
 import { useHSEStore } from '@/lib/store';
-import { Shield, BarChart3, ArrowLeft } from 'lucide-react';
+import { useHapticFeedback } from '@/lib/haptics';
+import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import type { RootStackParamList } from '@/navigation/AppNavigation';
 
-export type ScreenName = 'dashboard' | 'safe' | 'unsafe' | 'admin';
+type ScreenName = 'Dashboard' | 'SafeReport' | 'UnsafeReport' | 'Admin';
 
 interface HeaderProps {
   title: string;
   currentScreen: ScreenName;
-  onNavigate: (screen: ScreenName) => void;
+  navigation: NativeStackNavigationProp<RootStackParamList>;
   showBack?: boolean;
 }
 
-export function Header({ title, currentScreen, onNavigate, showBack }: HeaderProps) {
+export function Header({ title, currentScreen, navigation, showBack }: HeaderProps) {
   const { isOnline, syncPending } = useHSEStore();
+  const haptics = useHapticFeedback();
 
   return (
-    <View style={{
-      backgroundColor: Colors.slate,
-      borderBottomWidth: 1,
-      borderBottomColor: Colors.graphite,
-      paddingTop: 16,
-      paddingBottom: 14,
-      paddingHorizontal: 20,
-    }}>
-      <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', minHeight: 40 }}>
-        {/* Left: nav icon */}
-        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, minWidth: 100 }}>
+    <View style={S.container}>
+      <View style={S.row}>
+        <View style={S.left}>
           {showBack ? (
             <Pressable
-              onPress={() => onNavigate('dashboard')}
+              onPress={() => { haptics.impactMedium(); navigation.navigate('Dashboard'); }}
               hitSlop={12}
-              style={({ hovered }) => ({ opacity: hovered ? 0.7 : 1 })}
+              style={({ pressed }) => [S.backBtn, pressed && S.pressed]}
             >
-              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
-                <ArrowLeft size={20} color={Colors.steel} />
-                <Text style={{ color: Colors.steel, fontSize: 14 }}>رجوع</Text>
-              </View>
+              <ArrowLeft size={20} color={Dark.steel} />
+              <Text style={S.backText}>رجوع</Text>
             </Pressable>
-          ) : currentScreen === 'dashboard' ? (
+          ) : currentScreen === 'Dashboard' ? (
             <Pressable
-              onPress={() => onNavigate('admin')}
+              onPress={() => { haptics.impactMedium(); navigation.navigate('Admin'); }}
               hitSlop={12}
-              style={({ hovered }) => ({ opacity: hovered ? 0.7 : 1 })}
+              style={({ pressed }) => [S.backBtn, pressed && S.pressed]}
             >
-              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
-                <BarChart3 size={18} color={Colors.steel} />
-                <Text style={{ color: Colors.steel, fontSize: 13, fontWeight: '600' }}>لوحة المسؤول</Text>
-              </View>
+              <BarChart3 size={18} color={Dark.steel} />
+              <Text style={S.adminText}>لوحة المسؤول</Text>
             </Pressable>
           ) : null}
         </View>
 
-        {/* Center: Title */}
-        <Text style={{
-          fontWeight: '800',
-          fontSize: 18,
-          color: Colors.offWhite,
-          letterSpacing: -0.2,
-        }}>
-          {title}
-        </Text>
+        <Text style={S.title}>{title}</Text>
 
-        {/* Right: offline pill / logo */}
-        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, minWidth: 100, justifyContent: 'flex-start' }}>
+        <View style={S.right}>
           {!isOnline && (
-            <View style={{
-              paddingVertical: 4,
-              paddingHorizontal: 10,
-              borderRadius: 20,
-              borderWidth: 1,
-              borderColor: `${Colors.red}44`,
-              backgroundColor: Colors.redBg,
-            }}>
-              <Text style={{ color: Colors.red, fontSize: 11, fontWeight: '600' }}>
+            <View style={S.offlinePill}>
+              <Text style={S.offlineText}>
                 غير متصل{syncPending > 0 ? ` · ${syncPending}` : ''}
               </Text>
             </View>
           )}
           {isOnline && syncPending > 0 && (
-            <View style={{
-              paddingVertical: 4,
-              paddingHorizontal: 10,
-              borderRadius: 20,
-              borderWidth: 1,
-              borderColor: `${Colors.emerald}44`,
-              backgroundColor: Colors.emeraldBg,
-            }}>
-              <Text style={{ color: Colors.emerald, fontSize: 11, fontWeight: '600' }}>
-                مزامنة {syncPending}
-              </Text>
+            <View style={S.syncPill}>
+              <Text style={S.syncText}>مزامنة {syncPending}</Text>
             </View>
           )}
         </View>
@@ -97,3 +64,45 @@ export function Header({ title, currentScreen, onNavigate, showBack }: HeaderPro
     </View>
   );
 }
+
+const S = StyleSheet.create({
+  container: {
+    backgroundColor: Dark.slate,
+    borderBottomWidth: 1,
+    borderBottomColor: Dark.graphite,
+    paddingTop: 16,
+    paddingBottom: 14,
+    paddingHorizontal: 20,
+  },
+  row: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    minHeight: 40,
+  },
+  left: { flexDirection: 'row', alignItems: 'center', gap: 8, minWidth: 100 },
+  backBtn: { flexDirection: 'row', alignItems: 'center', gap: 4 },
+  backText: { color: Dark.steel, fontSize: 14 },
+  adminText: { color: Dark.steel, fontSize: 13, fontWeight: '600' },
+  title: { fontWeight: '800', fontSize: 18, color: Dark.offWhite, letterSpacing: -0.2 },
+  right: { flexDirection: 'row', alignItems: 'center', gap: 8, minWidth: 100 },
+  offlinePill: {
+    paddingVertical: 4,
+    paddingHorizontal: 10,
+    borderRadius: 20,
+    borderWidth: 1,
+    borderColor: `${Dark.red}44`,
+    backgroundColor: Dark.redBg,
+  },
+  offlineText: { color: Dark.red, fontSize: 11, fontWeight: '600' },
+  syncPill: {
+    paddingVertical: 4,
+    paddingHorizontal: 10,
+    borderRadius: 20,
+    borderWidth: 1,
+    borderColor: `${Dark.emerald}44`,
+    backgroundColor: Dark.emeraldBg,
+  },
+  syncText: { color: Dark.emerald, fontSize: 11, fontWeight: '600' },
+  pressed: { opacity: 0.7 },
+});
