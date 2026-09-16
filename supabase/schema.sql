@@ -4,10 +4,25 @@
 -- 1. assets
 CREATE TABLE IF NOT EXISTS assets (
   id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  asset_code text NOT NULL,
   name text NOT NULL,
-  type text NOT NULL,
+  type text,
   location text,
+  status text DEFAULT 'active',
   image_url text,
+  created_at timestamptz DEFAULT now()
+);
+
+-- 1b. actions
+CREATE TABLE IF NOT EXISTS actions (
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  title text NOT NULL,
+  description text,
+  type text,
+  priority text,
+  assignee text,
+  due_date date,
+  status text DEFAULT 'todo',
   created_at timestamptz DEFAULT now()
 );
 
@@ -77,6 +92,7 @@ CREATE TABLE IF NOT EXISTS feed_comments (
 
 -- Enable RLS on all tables
 ALTER TABLE assets ENABLE ROW LEVEL SECURITY;
+ALTER TABLE actions ENABLE ROW LEVEL SECURITY;
 ALTER TABLE tasks ENABLE ROW LEVEL SECURITY;
 ALTER TABLE hse_reports ENABLE ROW LEVEL SECURITY;
 ALTER TABLE training_courses ENABLE ROW LEVEL SECURITY;
@@ -85,10 +101,9 @@ ALTER TABLE feeds ENABLE ROW LEVEL SECURITY;
 ALTER TABLE feed_comments ENABLE ROW LEVEL SECURITY;
 
 -- Permissive policies (anon + authenticated)
-CREATE POLICY "anon_select_assets" ON assets FOR SELECT TO anon, authenticated USING (true);
-CREATE POLICY "anon_insert_assets" ON assets FOR INSERT TO anon, authenticated WITH CHECK (true);
-CREATE POLICY "anon_update_assets" ON assets FOR UPDATE TO anon, authenticated USING (true) WITH CHECK (true);
-CREATE POLICY "anon_delete_assets" ON assets FOR DELETE TO anon, authenticated USING (true);
+CREATE POLICY "allow_all_assets" ON assets FOR ALL TO anon, authenticated USING (true) WITH CHECK (true);
+
+CREATE POLICY "allow_all_actions" ON actions FOR ALL TO anon, authenticated USING (true) WITH CHECK (true);
 
 CREATE POLICY "anon_select_tasks" ON tasks FOR SELECT TO anon, authenticated USING (true);
 CREATE POLICY "anon_insert_tasks" ON tasks FOR INSERT TO anon, authenticated WITH CHECK (true);
@@ -122,6 +137,7 @@ CREATE POLICY "anon_delete_comments" ON feed_comments FOR DELETE TO anon, authen
 
 -- Enable Realtime
 ALTER PUBLICATION supabase_realtime ADD TABLE hse_reports;
+ALTER PUBLICATION supabase_realtime ADD TABLE actions;
 ALTER PUBLICATION supabase_realtime ADD TABLE tasks;
 ALTER PUBLICATION supabase_realtime ADD TABLE feeds;
 ALTER PUBLICATION supabase_realtime ADD TABLE feed_comments;
