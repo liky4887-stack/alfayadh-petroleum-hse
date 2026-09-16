@@ -1,8 +1,9 @@
 import { useState } from 'react';
-import { ScrollView, Text, View, Alert, Pressable, StyleSheet } from 'react-native';
+import { ScrollView, Text, View, Alert, Pressable, StyleSheet, Image } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import * as Location from 'expo-location';
-import { Camera, MapPin, AlertTriangle, AlertOctagon, ChevronLeft } from '@/lib/icons';
+import * as ImagePicker from 'expo-image-picker';
+import { Camera, MapPin, AlertTriangle, AlertOctagon, ChevronLeft, X } from 'lucide-react';
 import { Dark } from '@/theme/colors';
 import { DEPARTMENTS, DEPARTMENT_KEYS } from '@/lib/types';
 import type { ReportType, ReportStatus } from '@/lib/types';
@@ -20,7 +21,7 @@ export default function UnsafeReportScreen({ navigation }: { navigation: NativeS
   const [classification, setClassification] = useState<ReportType | null>(null);
   const [note, setNote] = useState('');
   const [correctiveAction, setCorrectiveAction] = useState('');
-  const [hasImage, setHasImage] = useState(false);
+  const [imageUri, setImageUri] = useState<string | null>(null);
   const [location, setLocation] = useState<{ lat: number; lng: number } | null>(null);
   const [department, setDepartment] = useState<string | null>(null);
   const [subcategory, setSubcategory] = useState<string | null>(null);
@@ -54,7 +55,19 @@ export default function UnsafeReportScreen({ navigation }: { navigation: NativeS
     }
   };
 
-  const handleImage = () => { haptics.selection(); setHasImage(!hasImage); };
+  const handleImage = async () => {
+    haptics.impactMedium();
+    const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+    if (status !== 'granted') {
+      Alert.alert('تنبيه', 'يلزم إذن الوصول للصور');
+      return;
+    }
+    const result = await ImagePicker.launchImageLibraryAsync({ mediaTypes: ImagePicker.MediaTypeOptions.Images, quality: 0.8 });
+    if (!result.canceled && result.assets[0]) {
+      setImageUri(result.assets[0].uri);
+      haptics.notificationSuccess();
+    }
+  };
   const handleDepartment = (dept: string) => { haptics.selection(); setDepartment(dept); setSubcategory(null); };
   const handleSubcategory = (sub: string) => { haptics.selection(); setSubcategory(sub); };
   const handleStatus = (s: ReportStatus) => { haptics.impactMedium(); setStatus(s); };
@@ -89,6 +102,7 @@ export default function UnsafeReportScreen({ navigation }: { navigation: NativeS
       type: classification,
       note: note.trim(),
       corrective_action: correctiveAction.trim() || null,
+      image_url: imageUri,
       department,
       subcategory,
       status,
@@ -158,15 +172,23 @@ export default function UnsafeReportScreen({ navigation }: { navigation: NativeS
                 <TextInput value={correctiveAction} onChangeText={setCorrectiveAction} placeholder="ما الإجراء المتخذ أو المطلوب؟" multiline numberOfLines={3} />
               </View>
               <View style={S.rowBtns}>
-                <Pressable onPress={handleImage} style={({ pressed }) => [S.toggleBtn, { borderColor: hasImage ? Dark.emerald : Dark.graphite, backgroundColor: hasImage ? Dark.emeraldBg : Dark.slate }, pressed && S.pressed]}>
-                  <Camera size={18} color={hasImage ? Dark.emerald : Dark.steel} />
-                  <Text style={[S.toggleText, { color: hasImage ? Dark.emerald : Dark.steel }]}>{hasImage ? 'تم الإرفاق' : 'إرفاق صورة'}</Text>
+                <Pressable onPress={handleImage} style={({ pressed }) => [S.toggleBtn, { borderColor: imageUri ? Dark.emerald : Dark.graphite, backgroundColor: imageUri ? Dark.emeraldBg : Dark.slate }, pressed && S.pressed]}>
+                  <Camera size={18} color={imageUri ? Dark.emerald : Dark.steel} />
+                  <Text style={[S.toggleText, { color: imageUri ? Dark.emerald : Dark.steel }]}>{imageUri ? 'تم الإرفاق' : 'إرفاق صورة'}</Text>
                 </Pressable>
                 <Pressable onPress={handleLocation} style={({ pressed }) => [S.toggleBtn, { borderColor: location ? Dark.emerald : Dark.graphite, backgroundColor: location ? Dark.emeraldBg : Dark.slate }, pressed && S.pressed]}>
                   <MapPin size={18} color={location ? Dark.emerald : Dark.steel} />
                   <Text style={[S.toggleText, { color: location ? Dark.emerald : Dark.steel }]}>{location ? 'تم التحديد' : 'تحديد الموقع'}</Text>
                 </Pressable>
               </View>
+              {imageUri && (
+                <View style={S.imagePreviewWrap}>
+                  <Image source={{ uri: imageUri }} style={S.imagePreview} />
+                  <Pressable onPress={() => { haptics.impactMedium(); setImageUri(null); }} style={S.removeImageBtn}>
+                    <X size={16} color="#FFF" strokeWidth={2.5} />
+                  </Pressable>
+                </View>
+              )}
               {location && (
                 <Text style={S.coords}>الإحداثيات: {location.lat.toFixed(4)}, {location.lng.toFixed(4)}</Text>
               )}
@@ -248,6 +270,9 @@ const S = StyleSheet.create({
   toggleBtn: { flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, paddingVertical: 14, borderWidth: 1, borderRadius: 10, minHeight: 48 },
   toggleText: { fontSize: 14, fontWeight: '600' },
   coords: { color: Dark.steel, fontSize: 12, fontVariant: ['tabular-nums'] },
+  imagePreviewWrap: { borderRadius: 12, overflow: 'hidden', position: 'relative', marginTop: 4 },
+  imagePreview: { width: '100%', height: 180, resizeMode: 'cover' },
+  removeImageBtn: { position: 'absolute', top: 10, right: 10, width: 32, height: 32, borderRadius: 16, backgroundColor: 'rgba(0,0,0,0.6)', alignItems: 'center', justifyContent: 'center' },
   chipWrap: { flexDirection: 'row', flexWrap: 'wrap', gap: 10 },
   statusBtn: { borderWidth: 1, borderRadius: 12, padding: 22, minHeight: 72 },
   statusTitle: { fontSize: 16, fontWeight: '700' },

@@ -1,7 +1,8 @@
 import { useState } from 'react';
-import { ScrollView, Text, View, Alert, Pressable, StyleSheet } from 'react-native';
+import { ScrollView, Text, View, Alert, Pressable, StyleSheet, Image } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { Camera, Check } from '@/lib/icons';
+import * as ImagePicker from 'expo-image-picker';
+import { Camera, Check, X } from 'lucide-react';
 import { Dark } from '@/theme/colors';
 import { useHSEStore } from '@/lib/store';
 import { useHapticFeedback } from '@/lib/haptics';
@@ -12,9 +13,27 @@ import type { RootStackParamList } from '@/navigation/AppNavigation';
 
 export default function SafeReportScreen({ navigation }: { navigation: NativeStackNavigationProp<RootStackParamList> }) {
   const [note, setNote] = useState('');
+  const [imageUri, setImageUri] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const { submitReport } = useHSEStore();
   const haptics = useHapticFeedback();
+
+  const pickImage = async () => {
+    haptics.impactMedium();
+    const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+    if (status !== 'granted') {
+      Alert.alert('تنبيه', 'يلزم إذن الوصول للصور');
+      return;
+    }
+    const result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ImagePicker.MediaTypeOptions.Images,
+      quality: 0.8,
+    });
+    if (!result.canceled && result.assets[0]) {
+      setImageUri(result.assets[0].uri);
+      haptics.notificationSuccess();
+    }
+  };
 
   const handleSubmit = async () => {
     if (!note.trim()) {
@@ -23,14 +42,21 @@ export default function SafeReportScreen({ navigation }: { navigation: NativeSta
       return;
     }
     setSubmitting(true);
-    const result = await submitReport({ type: 'safe', note: note.trim(), status: 'closed' });
+    const result = await submitReport({
+      type: 'safe',
+      note: note.trim(),
+      image_url: imageUri,
+      status: 'closed',
+    });
     setSubmitting(false);
 
     if (result.success) {
       haptics.notificationSuccess();
       Alert.alert(
-        result.offline ? 'تم الحفظ محلياً' : 'تم الإرسال',
-        result.offline ? 'شكراً لك! تم حفظ الملاحظة. سيتم المزامنة عند عودة الاتصال.' : 'شكراً لك! تم توثيق الملاحظة الإيجابية.'
+        result.offline ? 'تم الحفظ محلياً' : 'شكراً لك!',
+        result.offline
+          ? 'تم حفظ الملاحظة. سيتم المزامنة عند عودة الاتصال.'
+          : 'تم توثيق الملاحظة الإيجابية وإرسالها لمسؤول السلامة.'
       );
       navigation.navigate('Dashboard');
     } else {
@@ -49,14 +75,38 @@ export default function SafeReportScreen({ navigation }: { navigation: NativeSta
             <Text style={S.desc}>سجّل سلوكاً أو حالة آمنة أثارت انتباهك في الميدان. هذه الملاحظات تساعد في تعزيز ثقافة السلامة.</Text>
           </View>
           <View style={S.field}>
-            <Text style={S.fieldLabel}>الملاحظة</Text>
-            <TextInput value={note} onChangeText={setNote} placeholder="صف السلوك أو الحالة الآمنة التي لاحظتها..." multiline numberOfLines={4} />
+            <Text style={S.fieldLabel}>الملاحظة *</Text>
+            <TextInput
+              value={note}
+              onChangeText={setNote}
+              placeholder="صف السلوك أو الحالة الآمنة التي لاحظتها..."
+              multiline
+              numberOfLines={4}
+            />
           </View>
-          <Pressable style={({ pressed }) => [S.cameraBtn, pressed && S.pressed]}>
-            <Camera size={20} color={Dark.steel} />
-            <Text style={S.cameraText}>إرفاق صورة (اختياري)</Text>
-          </Pressable>
-          <Button label={submitting ? 'جاري الإرسال...' : 'إرسال التقرير'} onPress={handleSubmit} variant="primary" fullWidth disabled={submitting} icon={<Check size={18} color={Dark.offWhite} />} />
+
+          {imageUri ? (
+            <View style={S.imagePreviewWrap}>
+              <Image source={{ uri: imageUri }} style={S.imagePreview} />
+              <Pressable onPress={() => { haptics.impactMedium(); setImageUri(null); }} style={S.removeImageBtn}>
+                <X size={16} color="#FFF" strokeWidth={2.5} />
+              </Pressable>
+            </View>
+          ) : (
+            <Pressable onPress={pickImage} style={({ pressed }) => [S.cameraBtn, pressed && S.pressed]}>
+              <Camera size={20} color={Dark.steel} />
+              <Text style={S.cameraText}>إرفاق صورة (اختياري)</Text>
+            </Pressable>
+          )}
+
+          <Button
+            label={submitting ? 'جاري الإرسال...' : 'إرسال التقرير'}
+            onPress={handleSubmit}
+            variant="primary"
+            fullWidth
+            disabled={submitting}
+            icon={<Check size={18} color={Dark.offWhite} />}
+          />
         </View>
       </ScrollView>
     </SafeAreaView>
@@ -71,7 +121,16 @@ const S = StyleSheet.create({
   desc: { color: Dark.steel, fontSize: 14, lineHeight: 24 },
   field: { gap: 10 },
   fieldLabel: { color: Dark.steel, fontSize: 13, fontWeight: '600' },
-  cameraBtn: { flexDirection: 'row', alignItems: 'center', gap: 10, paddingVertical: 14, paddingHorizontal: 16, borderWidth: 1, borderColor: Dark.graphite, borderRadius: 10, backgroundColor: Dark.slate, minHeight: 48 },
+  cameraBtn: {
+    flexDirection: 'row', alignItems: 'center', gap: 10,
+    paddingVertical: 14, paddingHorizontal: 16,
+    borderWidth: 1, borderColor: Dark.graphite,
+    borderRadius: 10, backgroundColor: Dark.slate,
+    minHeight: 48,
+  },
   cameraText: { color: Dark.steel, fontSize: 14 },
+  imagePreviewWrap: { borderRadius: 12, overflow: 'hidden', position: 'relative' },
+  imagePreview: { width: '100%', height: 200, resizeMode: 'cover' },
+  removeImageBtn: { position: 'absolute', top: 10, right: 10, width: 32, height: 32, borderRadius: 16, backgroundColor: 'rgba(0,0,0,0.6)', alignItems: 'center', justifyContent: 'center' },
   pressed: { opacity: 0.8 },
 });

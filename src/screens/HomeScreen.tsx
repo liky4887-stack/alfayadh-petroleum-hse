@@ -1,10 +1,11 @@
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { View, Text, ScrollView, Pressable, StyleSheet, Image, Dimensions, FlatList, ListRenderItem } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { Bell, ChevronRight, CheckCircle2, Eye } from 'lucide-react';
+import { Bell, ChevronRight, BarChart3 } from 'lucide-react';
 import { C, IMG } from '@/theme/colors';
 import { BrandHeader, IconButton, Avatar, StatusPill, SectionLabel } from '@/components/Shared';
 import { useHapticFeedback } from '@/lib/haptics';
+import { useHSEStore } from '@/lib/store';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import type { RootStackParamList } from '@/navigation/AppNavigation';
 
@@ -23,6 +24,13 @@ type Slide = typeof PROMO_SLIDES[0];
 
 export default function HomeScreen({ navigation }: { navigation: NativeStackNavigationProp<RootStackParamList> }) {
   const haptics = useHapticFeedback();
+  const { reports, loadReports } = useHSEStore();
+
+  useEffect(() => { loadReports(); }, [loadReports]);
+
+  const openCount = reports.filter((r) => r.status === 'open').length;
+  const safeCount = reports.filter((r) => r.type === 'safe').length;
+  const unsafeCount = reports.filter((r) => r.type !== 'safe').length;
 
   return (
     <SafeAreaView style={S.screen} edges={['top']}>
@@ -32,6 +40,19 @@ export default function HomeScreen({ navigation }: { navigation: NativeStackNavi
           right={<IconButton icon={<Bell size={22} color={C.inkSecondary} strokeWidth={1.8} />} onPress={() => { haptics.impactMedium(); navigation.navigate('Feed'); }} />}
         />
         <View style={S.body}>
+          <Pressable onPress={() => { haptics.impactMedium(); navigation.navigate('Dashboard'); }} style={({ pressed }) => [S.dashCard, pressed && S.cardPressed]}>
+            <View style={S.dashLeft}>
+              <View style={S.dashIconWrap}>
+                <BarChart3 size={20} color={C.accent} strokeWidth={2} />
+              </View>
+              <View>
+                <Text style={S.dashTitle}>HSE Dashboard</Text>
+                <Text style={S.dashSub}>Report an issue or view stats</Text>
+              </View>
+            </View>
+            <ChevronRight size={18} color={C.faint} strokeWidth={2} />
+          </Pressable>
+
           <PromoCarousel onPress={() => { haptics.impactMedium(); navigation.navigate('Feed'); }} />
           <SectionLabel title="Heads up" action="View all" />
           <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={S.hStrip}>
@@ -39,8 +60,12 @@ export default function HomeScreen({ navigation }: { navigation: NativeStackNavi
             <HeadsUpCard image={IMG.wetFloor} tag="Heavy storms announced" author="Craig Tiley" status="Not viewed" danger onPress={() => { haptics.impactMedium(); navigation.navigate('Feed'); }} />
           </ScrollView>
           <View style={S.kpiRow}>
-            <KpiCard value="2" label="Training" onPress={() => { haptics.impactMedium(); navigation.navigate('Feed'); }} />
-            <KpiCard value="12" label="Open Issues" onPress={() => { haptics.impactMedium(); navigation.navigate('Feed'); }} />
+            <KpiCard value={String(safeCount)} label="Safe Reports" onPress={() => { haptics.impactMedium(); navigation.navigate('Dashboard'); }} />
+            <KpiCard value={String(unsafeCount)} label="Unsafe Reports" onPress={() => { haptics.impactMedium(); navigation.navigate('Dashboard'); }} />
+          </View>
+          <View style={S.kpiRow}>
+            <KpiCard value={String(openCount)} label="Open Issues" onPress={() => { haptics.impactMedium(); navigation.navigate('Dashboard'); }} />
+            <KpiCard value={String(reports.length)} label="Total Reports" onPress={() => { haptics.impactMedium(); navigation.navigate('Dashboard'); }} />
           </View>
           <View style={S.sectionRow}>
             <Text style={S.sectionLabel}>Today</Text>
@@ -195,5 +220,10 @@ const S = StyleSheet.create({
   taskCategory: { fontSize: 11, fontWeight: '700', color: C.accent, letterSpacing: 0.4, textTransform: 'uppercase' },
   taskTitle: { fontSize: 16, fontWeight: '700', color: C.ink, marginTop: 5, letterSpacing: -0.2 },
   taskMeta: { fontSize: 13, fontWeight: '400', color: C.muted, marginTop: 6 },
+  dashCard: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', backgroundColor: '#FFFFFF', borderRadius: 16, padding: 16, marginHorizontal: 20, marginTop: 8, borderWidth: 1, borderColor: C.border },
+  dashLeft: { flexDirection: 'row', alignItems: 'center', gap: 14 },
+  dashIconWrap: { width: 44, height: 44, borderRadius: 12, backgroundColor: C.accentSoft, alignItems: 'center', justifyContent: 'center' },
+  dashTitle: { fontSize: 16, fontWeight: '800', color: C.ink, letterSpacing: -0.2 },
+  dashSub: { fontSize: 13, fontWeight: '500', color: C.muted, marginTop: 2 },
   cardPressed: { opacity: 0.6 },
 });
