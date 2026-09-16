@@ -57,8 +57,31 @@ CREATE TABLE IF NOT EXISTS hse_reports (
 CREATE TABLE IF NOT EXISTS training_courses (
   id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
   title text NOT NULL,
+  description text,
+  duration text,
+  category text,
   thumbnail_url text,
   progress integer NOT NULL DEFAULT 0,
+  created_at timestamptz DEFAULT now()
+);
+
+-- 4b. employees
+CREATE TABLE IF NOT EXISTS employees (
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  full_name text NOT NULL,
+  email text,
+  job_title text,
+  department text,
+  created_at timestamptz DEFAULT now()
+);
+
+-- 4c. enrollments
+CREATE TABLE IF NOT EXISTS enrollments (
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  course_id uuid REFERENCES training_courses(id) ON DELETE CASCADE,
+  employee_id uuid REFERENCES employees(id) ON DELETE CASCADE,
+  status text DEFAULT 'assigned',
+  completed_at timestamptz,
   created_at timestamptz DEFAULT now()
 );
 
@@ -96,6 +119,8 @@ ALTER TABLE actions ENABLE ROW LEVEL SECURITY;
 ALTER TABLE tasks ENABLE ROW LEVEL SECURITY;
 ALTER TABLE hse_reports ENABLE ROW LEVEL SECURITY;
 ALTER TABLE training_courses ENABLE ROW LEVEL SECURITY;
+ALTER TABLE employees ENABLE ROW LEVEL SECURITY;
+ALTER TABLE enrollments ENABLE ROW LEVEL SECURITY;
 ALTER TABLE quiz_questions ENABLE ROW LEVEL SECURITY;
 ALTER TABLE feeds ENABLE ROW LEVEL SECURITY;
 ALTER TABLE feed_comments ENABLE ROW LEVEL SECURITY;
@@ -119,6 +144,10 @@ CREATE POLICY "anon_select_training" ON training_courses FOR SELECT TO anon, aut
 CREATE POLICY "anon_insert_training" ON training_courses FOR INSERT TO anon, authenticated WITH CHECK (true);
 CREATE POLICY "anon_update_training" ON training_courses FOR UPDATE TO anon, authenticated USING (true) WITH CHECK (true);
 CREATE POLICY "anon_delete_training" ON training_courses FOR DELETE TO anon, authenticated USING (true);
+
+CREATE POLICY "allow_all_employees" ON employees FOR ALL TO anon, authenticated USING (true) WITH CHECK (true);
+
+CREATE POLICY "allow_all_enrollments" ON enrollments FOR ALL TO anon, authenticated USING (true) WITH CHECK (true);
 
 CREATE POLICY "anon_select_quiz" ON quiz_questions FOR SELECT TO anon, authenticated USING (true);
 CREATE POLICY "anon_insert_quiz" ON quiz_questions FOR INSERT TO anon, authenticated WITH CHECK (true);
