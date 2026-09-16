@@ -21,6 +21,10 @@ import NewAssetScreen from '@/screens/NewAssetScreen';
 import ProfileScreen from '@/screens/ProfileScreen';
 import MediaLibraryScreen from '@/screens/MediaLibraryScreen';
 import HelpScreen from '@/screens/HelpScreen';
+import TrainingManageScreen from '@/screens/TrainingManageScreen';
+import NewCourseScreen from '@/screens/NewCourseScreen';
+import CourseDetailScreen from '@/screens/CourseDetailScreen';
+import ReportDetailScreen from '@/screens/ReportDetailScreen';
 
 import {
   UserRound,
@@ -29,7 +33,7 @@ import {
   GraduationCap,
   MoreHorizontal,
 } from '@/lib/icons';
-import type { LucideIcon } from '@/lib/icons';
+import type { LucideIcon } from 'lucide-react';
 
 export type RootStackParamList = {
   MainTabs: undefined;
@@ -44,6 +48,11 @@ export type RootStackParamList = {
   Profile: undefined;
   MediaLibrary: undefined;
   Help: undefined;
+  TrainingManage: undefined;
+  NewCourse: undefined;
+  CourseDetail: { courseId: string } | undefined;
+  ReportDetail: { reportId: string } | undefined;
+  Actions: { filter?: string } | undefined;
 };
 
 export type TabParamList = {
@@ -110,6 +119,10 @@ export default function Navigation() {
         <Stack.Screen name="Profile" component={ProfileScreen} />
         <Stack.Screen name="MediaLibrary" component={MediaLibraryScreen} />
         <Stack.Screen name="Help" component={HelpScreen} />
+        <Stack.Screen name="TrainingManage" component={TrainingManageScreen} />
+        <Stack.Screen name="NewCourse" component={NewCourseScreen} />
+        <Stack.Screen name="CourseDetail" component={CourseDetailScreen} />
+        <Stack.Screen name="ReportDetail" component={ReportDetailScreen} />
       </Stack.Navigator>
     </NavigationContainer>
   );

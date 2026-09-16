@@ -7,7 +7,7 @@ import { BrandHeader, IconButton } from '@/components/Shared';
 import { useHapticFeedback } from '@/lib/haptics';
 import { Image } from 'react-native';
 
-export default function TrainingScreen() {
+export default function TrainingScreen({ navigation }: { navigation: any }) {
   const [quiz, setQuiz] = useState(false);
   const haptics = useHapticFeedback();
 
@@ -16,7 +16,7 @@ export default function TrainingScreen() {
       <BrandHeader title="Training" />
       <View style={S.trainingTabs}>
         <Pressable onPress={() => undefined} style={S.trainingTabButton}><Text style={S.activeTab}>Learn</Text></Pressable>
-        <Pressable onPress={() => Alert.alert('Training management', 'Training management is available to supervisors.')} style={S.trainingTabButton}><Text style={S.inactiveTab}>Manage</Text></Pressable>
+        <Pressable onPress={() => { haptics.impactMedium(); navigation.navigate('TrainingManage'); }} style={S.trainingTabButton}><Text style={S.inactiveTab}>Manage</Text></Pressable>
       </View>
       <ScrollView contentContainerStyle={S.scrollContent} showsVerticalScrollIndicator={false}>
         <View style={S.body}>
