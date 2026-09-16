@@ -114,12 +114,9 @@ function BrandHeader({ title, right, onBack }: { title: string; right?: React.Re
         ) : null}
       </View>
       <View style={S.headerCenter}>
-        <View style={S.brandLockup}>
-          <View style={S.brandMark}><View style={S.brandMarkInner} /></View>
-          <View>
-            <Text style={S.brandName}>ALFAYADH</Text>
-            <Text style={S.brandSubline}>PETROLEUM · HSE</Text>
-          </View>
+        <View>
+          <Text style={S.brandName}>ALFAYADH</Text>
+          <Text style={S.brandSubline}>PETROLEUM · HSE</Text>
         </View>
       </View>
       <View style={S.headerRight}>{right}</View>
@@ -535,15 +532,11 @@ const S = StyleSheet.create({
   screen: { flex: 1, backgroundColor: C.canvas },
   body: { paddingHorizontal: 20, paddingTop: 8 },
   header: {
-    minHeight: 76,
-    paddingHorizontal: 16,
+    minHeight: 76, paddingHorizontal: 16,
     backgroundColor: 'rgba(255,255,255,0.82)',
-    borderBottomWidth: 1,
-    borderBottomColor: C.border,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    // @ts-ignore
+    borderBottomWidth: 1, borderBottomColor: C.border,
+    flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
+    // @ts-ignore — web-only CSS property
     backdropFilter: 'blur(20px) saturate(180%)',
     WebkitBackdropFilter: 'blur(20px) saturate(180%)',
   },
@@ -551,9 +544,6 @@ const S = StyleSheet.create({
   headerCenter: { flex: 1, alignItems: 'center', paddingHorizontal: 8 },
   headerRight: { width: 44, flexDirection: 'row', alignItems: 'center', justifyContent: 'flex-end' },
   headerActions: { flexDirection: 'row', gap: 2 },
-  brandLockup: { flexDirection: 'row', alignItems: 'center', gap: 9 },
-  brandMark: { width: 32, height: 32, borderRadius: 10, backgroundColor: C.accent, alignItems: 'center', justifyContent: 'center', transform: [{ rotate: '-8deg' }] },
-  brandMarkInner: { width: 13, height: 17, borderRadius: 8, borderWidth: 3, borderColor: C.surface, borderTopColor: 'transparent', transform: [{ rotate: '18deg' }] },
   brandName: { fontSize: 19, fontWeight: '800', fontFamily: 'Montserrat, sans-serif', letterSpacing: 1.4, color: C.ink, lineHeight: 21 },
   brandSubline: { fontSize: 8, fontWeight: '700', fontFamily: 'Montserrat, sans-serif', letterSpacing: 1.5, color: C.accent, marginTop: 2 },
   screenTitle: { fontSize: 28, fontWeight: '800', color: C.ink, letterSpacing: -0.5, paddingHorizontal: 20, paddingTop: 16, paddingBottom: 8 },
@@ -674,8 +664,15 @@ const S = StyleSheet.create({
   moreRow: { minHeight: 64, backgroundColor: C.surface, borderRadius: 16, paddingHorizontal: 16, flexDirection: 'row', alignItems: 'center', gap: 13, borderWidth: 1, borderColor: C.border },
   moreIcon: { width: 38, height: 38, borderRadius: 12, backgroundColor: C.accentSoft, alignItems: 'center', justifyContent: 'center' },
   moreLabel: { flex: 1, fontSize: 15, fontWeight: '600', color: C.ink, minWidth: 0 },
-  bottomTabs: { position: 'absolute', bottom: 0, left: 0, right: 0, height: 80, backgroundColor: 'rgba(255,255,255,0.88)', borderTopWidth: 1, borderTopColor: C.border, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-around', paddingBottom: 8, // @ts-ignore
-    backdropFilter: 'blur(20px) saturate(180%)', WebkitBackdropFilter: 'blur(20px) saturate(180%)' },
+  bottomTabs: {
+    position: 'absolute', bottom: 0, left: 0, right: 0, height: 80,
+    backgroundColor: 'rgba(255,255,255,0.88)',
+    borderTopWidth: 1, borderTopColor: C.border,
+    flexDirection: 'row', alignItems: 'center', justifyContent: 'space-around', paddingBottom: 8,
+    // @ts-ignore — web-only CSS
+    backdropFilter: 'blur(20px) saturate(180%)',
+    WebkitBackdropFilter: 'blur(20px) saturate(180%)',
+  },
   tabItem: { alignItems: 'center', justifyContent: 'center', flex: 1, minHeight: 56, gap: 4, borderRadius: 12 },
   tabLabel: { fontSize: 10, fontWeight: '600', color: C.muted },
   tabLabelActive: { color: C.accent, fontWeight: '800' },
