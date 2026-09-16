@@ -26,6 +26,7 @@ import {
   Play,
   Plus,
   Send,
+  Sparkles,
   Tag,
   Trash2,
   UserRound,
@@ -34,6 +35,9 @@ import {
 import { supabase } from '@/lib/supabase';
 import { useHapticFeedback } from '@/hooks/useHaptics';
 
+// ─── Design Tokens ──────────────────────────────────────────────
+// Neutral-first palette. Color goes only on the product (buttons, status).
+// No gradient blobs, no purple washes.
 const C = {
   canvas: '#F2FAFF',
   surface: '#FFFFFF',
@@ -105,6 +109,7 @@ export default function App() {
   );
 }
 
+// ─── Brand Header ────────────────────────────────────────────────
 function BrandHeader({ title, right, onBack }: { title: string; right?: React.ReactNode; onBack?: () => void }) {
   return (
     <View style={S.header}>
@@ -128,12 +133,14 @@ function ScreenTitle({ title }: { title: string }) {
   return <Text style={S.screenTitle}>{title}</Text>;
 }
 
+// ─── Home Screen ─────────────────────────────────────────────────
 function HomeScreen({ onFeed, onMedia, onTraining, onIssues }: { onFeed: () => void; onMedia: () => void; onTraining: () => void; onIssues: () => void }) {
   const scrollRef = useRef<ScrollView>(null);
   return (
     <ScrollView ref={scrollRef} style={S.scroll} contentContainerStyle={S.scrollContent} showsVerticalScrollIndicator={false}>
       <BrandHeader title="Home" right={<IconButton icon={<Bell size={22} color={C.inkSecondary} strokeWidth={1.8} />} onPress={() => Alert.alert('Notifications', 'You are all caught up.')} />} />
       <View style={S.body}>
+        <PromoBanner onPress={onTraining} />
         <SectionLabel title="Heads up" action="View all" />
         <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={S.hStrip}>
           <HeadsUpCard image={IMG.warehouse} tag="New stock delivered" author="Maria Murphy" status="Acknowledged" onPress={onMedia} />
@@ -147,6 +154,7 @@ function HomeScreen({ onFeed, onMedia, onTraining, onIssues }: { onFeed: () => v
           <Text style={S.sectionLabel}>Today</Text>
           <View style={S.countBadge}><Text style={S.countBadgeText}>3</Text></View>
         </View>
+        {/* Stacked task rows — name left, status right, meta below */}
         <View style={S.taskList}>
           <TaskRow category="Inspection" title="Monthly maintenance check" meta="Low priority" status="To Do" tone="orange" />
           <TaskRow category="Action" title="Restock store room supplies" meta="Low priority" status="In Progress" tone="blue" />
@@ -154,6 +162,27 @@ function HomeScreen({ onFeed, onMedia, onTraining, onIssues }: { onFeed: () => v
         </View>
       </View>
     </ScrollView>
+  );
+}
+
+function PromoBanner({ onPress }: { onPress: () => void }) {
+  return (
+    <Pressable onPress={onPress} style={({ pressed }) => [S.promoBanner, pressed && S.cardPressed]}>
+      <Image source={{ uri: IMG.barrels }} style={S.promoImage} />
+      <View style={S.promoOverlay} />
+      <View style={S.promoContent}>
+        <View style={S.promoBadge}>
+          <Sparkles size={12} color={C.surface} strokeWidth={2} />
+          <Text style={S.promoBadgeText}>SAFETY CAMPAIGN</Text>
+        </View>
+        <Text style={S.promoTitle}>Q4 Zero-Incident Initiative</Text>
+        <Text style={S.promoSubtitle}>Complete your safety training by October 31</Text>
+        <View style={S.promoCta}>
+          <Text style={S.promoCtaText}>Start training</Text>
+          <ChevronRight size={15} color={C.accent} strokeWidth={2.5} />
+        </View>
+      </View>
+    </Pressable>
   );
 }
 
@@ -195,6 +224,8 @@ function SectionLabel({ title, action }: { title: string; action?: string }) {
   );
 }
 
+// Restructured: two-line row. Title left, status right.
+// Meta underneath. Reads as one unit, thumb-sized.
 function TaskRow({ category, title, meta, status, tone, last }: { category: string; title: string; meta: string; status: string; tone: 'orange' | 'blue' | 'green'; last?: boolean }) {
   return (
     <View style={[S.taskRow, last && S.taskRowLast]}>
@@ -210,6 +241,7 @@ function TaskRow({ category, title, meta, status, tone, last }: { category: stri
   );
 }
 
+// ─── Asset Profile ───────────────────────────────────────────────
 function AssetScreen({ onBack }: { onBack: () => void }) {
   return (
     <ScrollView style={S.scroll} contentContainerStyle={S.scrollContent} showsVerticalScrollIndicator={false}>
@@ -264,6 +296,7 @@ function ScheduleCard({ title, tag, meta, assignee, status, tone, last }: { titl
   );
 }
 
+// ─── Media Capture ───────────────────────────────────────────────
 function MediaScreen({ onClose }: { onClose: () => void }) {
   const [selected, setSelected] = useState(0);
   const thumbs = [IMG.worker, IMG.warehouse, IMG.truck, IMG.barrels];
@@ -297,6 +330,7 @@ function MediaScreen({ onClose }: { onClose: () => void }) {
   );
 }
 
+// ─── Team Feed ────────────────────────────────────────────────────
 function FeedScreen({ onClose }: { onClose: () => void }) {
   const [comment, setComment] = useState('');
   const [acknowledged, setAcknowledged] = useState(false);
@@ -362,6 +396,7 @@ function CommentBubble({ initials, color, text }: { initials: string; color: str
   );
 }
 
+// ─── Training ─────────────────────────────────────────────────────
 function TrainingScreen() {
   const [quiz, setQuiz] = useState(false);
   return (
@@ -432,6 +467,7 @@ function QuizOverlay({ onClose }: { onClose: () => void }) {
   );
 }
 
+// ─── Actions & More ──────────────────────────────────────────────
 function ActionsScreen() {
   return (
     <View style={S.screen}>
@@ -470,6 +506,7 @@ function MoreRow({ icon, label, onPress }: { icon: React.ReactNode; label: strin
   );
 }
 
+// ─── Bottom Tabs — translucent material ───────────────────────────
 function BottomTabs({ active, onChange }: { active: Tab; onChange: (tab: Tab) => void }) {
   const tabs: { key: Tab; label: string; icon: (color: string) => React.ReactNode }[] = [
     { key: 'home', label: 'Home', icon: (c) => <UserRound size={22} color={c} strokeWidth={1.8} /> },
@@ -493,6 +530,7 @@ function BottomTabs({ active, onChange }: { active: Tab; onChange: (tab: Tab) =>
   );
 }
 
+// ─── Primitives ──────────────────────────────────────────────────
 function IconButton({ icon, onPress }: { icon: React.ReactNode; onPress: () => void }) {
   return (
     <Pressable onPress={onPress} style={({ pressed }) => [S.iconBtn, pressed && S.cardPressed]}>
@@ -524,18 +562,32 @@ function StatusPill({ label, tone }: { label: string; tone: 'green' | 'red' | 'o
   );
 }
 
+// ─── Styles ──────────────────────────────────────────────────────
+// Apple-style: generous spacing, tight large headings, loose body.
+// Translucent chrome. Rounded 16px cards. Subtle shadows.
+// Press feedback via opacity (spring-like feel on native, instant on web).
 const S = StyleSheet.create({
+  // Shell
   outer: { flex: 1, minHeight: '100vh', backgroundColor: C.canvas, alignItems: 'center' },
   phone: { flex: 1, minHeight: '100vh', backgroundColor: C.canvas, maxWidth: 430, width: '100%', position: 'relative' },
+
+  // Scroll
   scroll: { flex: 1, backgroundColor: C.canvas },
   scrollContent: { paddingBottom: 110, paddingEnd: 0 },
   screen: { flex: 1, backgroundColor: C.canvas },
   body: { paddingHorizontal: 20, paddingTop: 8 },
+
+  // Header — translucent material
   header: {
-    minHeight: 76, paddingHorizontal: 16,
+    minHeight: 76,
+    paddingHorizontal: 16,
     backgroundColor: 'rgba(255,255,255,0.82)',
-    borderBottomWidth: 1, borderBottomColor: C.border,
-    flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
+    borderBottomWidth: 1,
+    borderBottomColor: C.border,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    // backdrop-filter for web translucency
     // @ts-ignore — web-only CSS property
     backdropFilter: 'blur(20px) saturate(180%)',
     WebkitBackdropFilter: 'blur(20px) saturate(180%)',
@@ -547,25 +599,58 @@ const S = StyleSheet.create({
   brandName: { fontSize: 19, fontWeight: '800', fontFamily: 'Montserrat, sans-serif', letterSpacing: 1.4, color: C.ink, lineHeight: 21 },
   brandSubline: { fontSize: 8, fontWeight: '700', fontFamily: 'Montserrat, sans-serif', letterSpacing: 1.5, color: C.accent, marginTop: 2 },
   screenTitle: { fontSize: 28, fontWeight: '800', color: C.ink, letterSpacing: -0.5, paddingHorizontal: 20, paddingTop: 16, paddingBottom: 8 },
+
+  // Section labels
   sectionRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginTop: 28, marginBottom: 14 },
   sectionLabel: { fontSize: 22, fontWeight: '800', color: C.ink, letterSpacing: -0.3 },
   sectionAction: { fontSize: 14, fontWeight: '600', color: C.accent },
+
+  // Promo banner
+  promoBanner: { height: 168, borderRadius: 20, overflow: 'hidden', position: 'relative', marginBottom: 8, marginTop: 4 },
+  promoImage: { width: '100%', height: '100%', resizeMode: 'cover' },
+  promoOverlay: { position: 'absolute', inset: 0, backgroundColor: 'rgba(8,42,66,0.78)' },
+  promoContent: { position: 'absolute', inset: 0, padding: 20, justifyContent: 'center' },
+  promoBadge: { flexDirection: 'row', alignItems: 'center', gap: 5, backgroundColor: 'rgba(255,255,255,0.18)', paddingHorizontal: 10, paddingVertical: 5, borderRadius: 20, alignSelf: 'flex-start' },
+  promoBadgeText: { fontSize: 10, fontWeight: '800', color: C.surface, letterSpacing: 1.2 },
+  promoTitle: { fontSize: 22, fontWeight: '800', color: C.surface, letterSpacing: -0.3, marginTop: 12, lineHeight: 28 },
+  promoSubtitle: { fontSize: 14, fontWeight: '500', color: 'rgba(255,255,255,0.82)', marginTop: 6 },
+  promoCta: { flexDirection: 'row', alignItems: 'center', gap: 4, backgroundColor: C.surface, paddingHorizontal: 14, paddingVertical: 8, borderRadius: 20, alignSelf: 'flex-start', marginTop: 14 },
+  promoCtaText: { fontSize: 13, fontWeight: '800', color: C.accent },
+
+  // Heads-up cards
   hStrip: { paddingStart: 20, paddingEnd: 20, gap: 16 },
-  headsCard: { width: 280, backgroundColor: C.surface, borderRadius: 16, overflow: 'hidden', borderWidth: 1, borderColor: C.border },
+  headsCard: {
+    width: 280, backgroundColor: C.surface,
+    borderRadius: 16, overflow: 'hidden',
+    borderWidth: 1, borderColor: C.border,
+  },
   headsImage: { width: '100%', height: 130 },
   headsBody: { padding: 16 },
   headsTag: { fontSize: 16, fontWeight: '700', color: C.ink, letterSpacing: -0.2, minHeight: 44 },
   headsFooter: { flexDirection: 'row', alignItems: 'center', gap: 8, marginTop: 14 },
   headsAuthor: { fontSize: 13, fontWeight: '500', color: C.inkSecondary, flex: 1, minWidth: 0 },
+
+  // KPI cards
   kpiRow: { flexDirection: 'row', justifyContent: 'space-between', gap: 16, marginTop: 20 },
-  kpiCard: { flex: 1, minHeight: 96, backgroundColor: C.surface, borderRadius: 18, padding: 16, flexDirection: 'row', alignItems: 'center', gap: 12, borderWidth: 1, borderColor: C.border },
+  kpiCard: {
+    flex: 1, minHeight: 96, backgroundColor: C.surface,
+    borderRadius: 18, padding: 16, flexDirection: 'row', alignItems: 'center', gap: 12,
+    borderWidth: 1, borderColor: C.border,
+  },
   kpiAccent: { width: 5, height: 48, borderRadius: 3, backgroundColor: C.sky },
   kpiCopy: { flex: 1 },
   kpiValue: { fontSize: 24, fontWeight: '800', color: C.ink, letterSpacing: -0.3, fontVariant: ['tabular-nums'] },
   kpiLabel: { fontSize: 13, fontWeight: '500', color: C.muted, marginTop: 2 },
+
+  // Count badge
   countBadge: { backgroundColor: C.accent, minWidth: 24, height: 24, borderRadius: 12, paddingHorizontal: 8, alignItems: 'center', justifyContent: 'center' },
   countBadgeText: { color: C.surface, fontSize: 12, fontWeight: '800', fontVariant: ['tabular-nums'] },
-  taskList: { backgroundColor: C.surface, borderRadius: 18, borderWidth: 1, borderColor: C.border, paddingHorizontal: 18, overflow: 'hidden' },
+
+  // Task list — stacked rows, not cramped table
+  taskList: {
+    backgroundColor: C.surface, borderRadius: 18, borderWidth: 1, borderColor: C.border,
+    paddingHorizontal: 18, overflow: 'hidden',
+  },
   taskRow: { paddingVertical: 16, borderBottomWidth: 1, borderBottomColor: C.border },
   taskRowLast: { borderBottomWidth: 0 },
   taskRowTop: { flexDirection: 'row', alignItems: 'flex-start', justifyContent: 'space-between' },
@@ -573,15 +658,25 @@ const S = StyleSheet.create({
   taskCategory: { fontSize: 11, fontWeight: '700', color: C.accent, letterSpacing: 0.4, textTransform: 'uppercase' },
   taskTitle: { fontSize: 16, fontWeight: '700', color: C.ink, marginTop: 5, letterSpacing: -0.2 },
   taskMeta: { fontSize: 13, fontWeight: '400', color: C.muted, marginTop: 6 },
-  assetHero: { backgroundColor: C.surface, borderRadius: 20, overflow: 'hidden', borderWidth: 1, borderColor: C.border, marginTop: 20 },
+
+  // Asset hero
+  assetHero: {
+    backgroundColor: C.surface, borderRadius: 20, overflow: 'hidden',
+    borderWidth: 1, borderColor: C.border, marginTop: 20,
+  },
   assetImage: { width: '100%', height: 200 },
   assetInfo: { padding: 18, flexDirection: 'row', alignItems: 'flex-start', justifyContent: 'space-between' },
   assetId: { fontSize: 22, fontWeight: '800', color: C.ink, letterSpacing: -0.3, fontVariant: ['tabular-nums'] },
   assetType: { fontSize: 15, fontWeight: '500', color: C.inkSecondary, marginTop: 4 },
   assetLocation: { flexDirection: 'row', alignItems: 'center', gap: 5, backgroundColor: C.surfaceAlt, paddingHorizontal: 10, paddingVertical: 6, borderRadius: 10 },
   assetLocationText: { fontSize: 14, fontWeight: '600', color: C.inkSecondary },
+
+  // Schedule cards
   scheduleList: { gap: 14, marginTop: 4 },
-  scheduleCard: { backgroundColor: C.surface, borderRadius: 18, padding: 18, borderWidth: 1, borderColor: C.border },
+  scheduleCard: {
+    backgroundColor: C.surface, borderRadius: 18, padding: 18,
+    borderWidth: 1, borderColor: C.border,
+  },
   scheduleLast: { marginBottom: 24 },
   scheduleTop: { flexDirection: 'row', alignItems: 'flex-start', justifyContent: 'space-between' },
   scheduleTitle: { fontSize: 17, fontWeight: '700', color: C.ink, flex: 1, marginRight: 12, letterSpacing: -0.2, minWidth: 0 },
@@ -592,6 +687,8 @@ const S = StyleSheet.create({
   scheduleAssignee: { fontSize: 14, fontWeight: '500', color: C.ink, marginTop: 12 },
   scheduleFooter: { borderTopWidth: 1, borderTopColor: C.border, marginTop: 16, paddingTop: 14 },
   scheduleUpdated: { fontSize: 13, fontWeight: '400', color: C.muted },
+
+  // Full screen (media, feed)
   fullScreen: { flex: 1, backgroundColor: C.surface },
   mediaHeader: { height: 72, paddingHorizontal: 16, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
   doneBtn: { minHeight: 44, paddingHorizontal: 12, justifyContent: 'center', borderRadius: 10 },
@@ -604,6 +701,8 @@ const S = StyleSheet.create({
   thumb: { width: 72, height: 72, borderRadius: 14, overflow: 'hidden', borderWidth: 2, borderColor: 'transparent' },
   thumbSelected: { borderColor: C.accent },
   thumbImage: { width: '100%', height: '100%' },
+
+  // Feed
   feedHeader: { height: 72, paddingHorizontal: 16, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', borderBottomWidth: 1, borderBottomColor: C.border },
   ackBtn: { minHeight: 40, paddingHorizontal: 16, borderRadius: 20, backgroundColor: C.accent, flexDirection: 'row', alignItems: 'center', gap: 6 },
   ackBtnDone: { backgroundColor: C.green },
@@ -629,6 +728,8 @@ const S = StyleSheet.create({
   commentInput: { flex: 1, height: 44, borderWidth: 1, borderColor: C.border, borderRadius: 22, paddingHorizontal: 16, fontSize: 14, fontWeight: '400', color: C.ink, backgroundColor: C.surfaceAlt },
   sendBtn: { width: 44, height: 44, borderRadius: 22, alignItems: 'center', justifyContent: 'center' },
   sendBtnDisabled: { opacity: 0.35 },
+
+  // Training
   trainingTabs: { height: 52, backgroundColor: C.surface, borderBottomWidth: 1, borderBottomColor: C.border, flexDirection: 'row', alignItems: 'center' },
   trainingTabButton: { flex: 1, alignItems: 'center', justifyContent: 'center', height: 52 },
   activeTab: { flex: 1, textAlign: 'center', fontSize: 15, fontWeight: '700', color: C.ink, paddingVertical: 16, borderBottomWidth: 2.5, borderBottomColor: C.accent },
@@ -638,6 +739,8 @@ const S = StyleSheet.create({
   courseCard: { width: 168, backgroundColor: C.surface, borderRadius: 16, overflow: 'hidden', borderWidth: 1, borderColor: C.border },
   courseImage: { width: '100%', height: 100 },
   courseTitle: { fontSize: 14, fontWeight: '700', color: C.ink, padding: 13, letterSpacing: -0.1, minHeight: 58 },
+
+  // Progress
   progressCard: { backgroundColor: C.surface, borderRadius: 18, padding: 18, borderWidth: 1, borderColor: C.border },
   progressTop: { flexDirection: 'row', alignItems: 'center', gap: 10 },
   progressTitle: { flex: 1, fontSize: 15, fontWeight: '700', color: C.ink, minWidth: 0 },
@@ -645,6 +748,8 @@ const S = StyleSheet.create({
   progressTrack: { height: 8, borderRadius: 4, backgroundColor: C.accentSoft, marginTop: 16, overflow: 'hidden' },
   progressFill: { height: '100%', width: '68%', backgroundColor: C.accent, borderRadius: 4 },
   progressMeta: { fontSize: 13, fontWeight: '400', color: C.muted, marginTop: 10 },
+
+  // Quiz overlay
   quizOverlay: { position: 'absolute', inset: 0, backgroundColor: C.accent, paddingHorizontal: 24, paddingTop: 28 },
   quizTop: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
   quizProgress: { fontSize: 16, fontWeight: '700', color: C.surface, fontVariant: ['tabular-nums'] },
@@ -657,13 +762,19 @@ const S = StyleSheet.create({
   quizSelectedText: { color: C.ink },
   quizContinue: { position: 'absolute', left: 24, right: 24, bottom: 32, minHeight: 56, borderRadius: 16, backgroundColor: C.surface, alignItems: 'center', justifyContent: 'center' },
   quizContinueText: { fontSize: 16, fontWeight: '800', color: C.accent },
+
+  // Empty state
   emptyState: { alignItems: 'center', justifyContent: 'center', flex: 1, padding: 40, gap: 14 },
   emptyTitle: { fontSize: 20, fontWeight: '800', color: C.ink, letterSpacing: -0.2 },
   emptyText: { fontSize: 15, fontWeight: '400', color: C.muted, textAlign: 'center', lineHeight: 22 },
+
+  // More
   moreList: { gap: 10, marginTop: 20 },
   moreRow: { minHeight: 64, backgroundColor: C.surface, borderRadius: 16, paddingHorizontal: 16, flexDirection: 'row', alignItems: 'center', gap: 13, borderWidth: 1, borderColor: C.border },
   moreIcon: { width: 38, height: 38, borderRadius: 12, backgroundColor: C.accentSoft, alignItems: 'center', justifyContent: 'center' },
   moreLabel: { flex: 1, fontSize: 15, fontWeight: '600', color: C.ink, minWidth: 0 },
+
+  // Bottom tabs — translucent material
   bottomTabs: {
     position: 'absolute', bottom: 0, left: 0, right: 0, height: 80,
     backgroundColor: 'rgba(255,255,255,0.88)',
@@ -676,6 +787,8 @@ const S = StyleSheet.create({
   tabItem: { alignItems: 'center', justifyContent: 'center', flex: 1, minHeight: 56, gap: 4, borderRadius: 12 },
   tabLabel: { fontSize: 10, fontWeight: '600', color: C.muted },
   tabLabelActive: { color: C.accent, fontWeight: '800' },
+
+  // Shared
   iconBtn: { width: 44, height: 44, alignItems: 'center', justifyContent: 'center', borderRadius: 12 },
   cardPressed: { opacity: 0.6, transform: 'scale(0.97)' },
   avatar: { width: 30, height: 30, borderRadius: 15, alignItems: 'center', justifyContent: 'center' },
