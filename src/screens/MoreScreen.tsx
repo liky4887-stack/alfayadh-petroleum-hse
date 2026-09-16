@@ -1,21 +1,23 @@
-import { View, Text, Pressable, StyleSheet, Alert } from 'react-native';
+import { View, Text, Pressable, StyleSheet } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { UserRound, Image as ImageIcon, Menu, ChevronRight } from '@/lib/icons';
+import { UserRound, Image as ImageIcon, Menu, ChevronRight } from 'lucide-react';
 import { C } from '@/theme/colors';
 import { BrandHeader } from '@/components/Shared';
 import { useHapticFeedback } from '@/lib/haptics';
 import type { ReactNode } from 'react';
+import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import type { RootStackParamList } from '@/navigation/AppNavigation';
 
-export default function MoreScreen() {
+export default function MoreScreen({ navigation }: { navigation: NativeStackNavigationProp<RootStackParamList> }) {
   const haptics = useHapticFeedback();
   return (
     <SafeAreaView style={S.screen} edges={['top']}>
       <BrandHeader title="More" />
       <View style={S.body}>
         <View style={S.moreList}>
-          <MoreRow icon={<UserRound size={19} color={C.accent} strokeWidth={1.8} />} label="Profile and preferences" onPress={() => { haptics.impactMedium(); Alert.alert('Profile', 'Your profile settings are ready.'); }} />
-          <MoreRow icon={<ImageIcon size={19} color={C.accent} strokeWidth={1.8} />} label="Media library" onPress={() => { haptics.impactMedium(); Alert.alert('Media library', 'Your saved safety media will appear here.'); }} />
-          <MoreRow icon={<Menu size={19} color={C.accent} strokeWidth={1.8} />} label="Help and support" onPress={() => { haptics.impactMedium(); Alert.alert('Help and support', 'Contact your HSE administrator for assistance.'); }} />
+          <MoreRow icon={<UserRound size={19} color={C.accent} strokeWidth={1.8} />} label="Profile and preferences" onPress={() => { haptics.impactMedium(); navigation.navigate('Profile'); }} />
+          <MoreRow icon={<ImageIcon size={19} color={C.accent} strokeWidth={1.8} />} label="Media library" onPress={() => { haptics.impactMedium(); navigation.navigate('MediaLibrary'); }} />
+          <MoreRow icon={<Menu size={19} color={C.accent} strokeWidth={1.8} />} label="Help and support" onPress={() => { haptics.impactMedium(); navigation.navigate('Help'); }} />
         </View>
       </View>
     </SafeAreaView>
