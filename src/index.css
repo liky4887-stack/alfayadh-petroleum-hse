@@ -8,9 +8,9 @@
   --color-canvas: #F5F7FA;
   --color-surface: #FFFFFF;
   --color-border: #E5E7EB;
-  --color-purple: #6B4EFF;
-  --color-ink: #1A1A1A;
-  --color-muted: #8A94A6;
+  --color-sky: #138FC2;
+  --color-ink: #102A43;
+  --color-muted: #6B8298;
 }
 
 * {
@@ -40,7 +40,7 @@ body {
 }
 
 ::selection {
-  background: rgba(107, 78, 255, 0.15);
+  background: rgba(19, 143, 194, 0.15);
 }
 
 ::-webkit-scrollbar {

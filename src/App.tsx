@@ -30,25 +30,23 @@ import {
   Trash2,
   UserRound,
   X,
-  Zap,
 } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 import { useHapticFeedback } from '@/hooks/useHaptics';
 
-// ─── Design Tokens ──────────────────────────────────────────────
 const C = {
-  canvas: '#F2F3F5',
+  canvas: '#F2FAFF',
   surface: '#FFFFFF',
-  surfaceAlt: '#FAFAFB',
-  border: '#E8E9EC',
-  borderStrong: '#D1D3D9',
-  ink: '#1C1C1E',
-  inkSecondary: '#636366',
-  muted: '#8E8E93',
-  faint: '#AEAEB2',
-  accent: '#6B4EFF',
-  accentSoft: '#F0EDFF',
-  accentHover: '#5B3EEF',
+  surfaceAlt: '#F5FBFF',
+  border: '#D8ECF7',
+  borderStrong: '#B6D9EC',
+  ink: '#102A43',
+  inkSecondary: '#486581',
+  muted: '#6B8298',
+  faint: '#9BB6C8',
+  accent: '#138FC2',
+  accentSoft: '#DDF4FF',
+  accentHover: '#087EAE',
   greenBg: '#E6F4EA',
   green: '#137333',
   orangeBg: '#FEF7E0',
@@ -56,16 +54,17 @@ const C = {
   redBg: '#FCE8E6',
   red: '#C5221F',
   blueBg: '#E8F2FF',
-  blue: '#2476B9',
+  blue: '#138FC2',
+  sky: '#5BC0EB',
 };
 
 const IMG = {
-  warehouse: 'https://images.pexels.com/photos/4487382/pexels-photo-4487382.jpeg?auto=compress&cs=tinysrgb&h=650&w=940',
-  wetFloor: 'https://images.pexels.com/photos/3769138/pexels-photo-3769138.jpeg?auto=compress&cs=tinysrgb&h=650&w=940',
-  truck: 'https://images.pexels.com/photos/7018500/pexels-photo-7018500.jpeg?auto=compress&cs=tinysrgb&h=650&w=940',
-  driver: 'https://images.pexels.com/photos/11114134/pexels-photo-11114134.jpeg?auto=compress&cs=tinysrgb&h=650&w=940',
-  barrels: 'https://images.pexels.com/photos/2786527/pexels-photo-2786527.jpeg?auto=compress&cs=tinysrgb&h=650&w=940',
-  worker: 'https://images.pexels.com/photos/4062506/pexels-photo-4062506.jpeg?auto=compress&cs=tinysrgb&h=650&w=940',
+  warehouse: 'https://images.pexels.com/photos/37589838/pexels-photo-37589838.jpeg?auto=compress&cs=tinysrgb&h=650&w=940',
+  wetFloor: 'https://images.pexels.com/photos/5884386/pexels-photo-5884386.jpeg?auto=compress&cs=tinysrgb&h=650&w=940',
+  truck: 'https://images.pexels.com/photos/10673703/pexels-photo-10673703.jpeg?auto=compress&cs=tinysrgb&h=650&w=940',
+  driver: 'https://images.pexels.com/photos/15947456/pexels-photo-15947456.jpeg?auto=compress&cs=tinysrgb&h=650&w=940',
+  barrels: 'https://images.pexels.com/photos/6060191/pexels-photo-6060191.jpeg?auto=compress&cs=tinysrgb&h=650&w=940',
+  worker: 'https://images.pexels.com/photos/16368437/pexels-photo-16368437.jpeg?auto=compress&cs=tinysrgb&h=650&w=940',
 };
 
 type Tab = 'home' | 'assets' | 'actions' | 'training' | 'more';
@@ -96,8 +95,8 @@ export default function App() {
 
   return shell(
     <>
-      {tab === 'home' && <HomeScreen onFeed={() => setFeedOpen(true)} onMedia={() => setMediaOpen(true)} />}
-      {tab === 'assets' && <AssetScreen />}
+      {tab === 'home' && <HomeScreen onFeed={() => setFeedOpen(true)} onMedia={() => setMediaOpen(true)} onTraining={() => setTab('training')} onIssues={() => setTab('actions')} />}
+      {tab === 'assets' && <AssetScreen onBack={() => setTab('home')} />}
       {tab === 'actions' && <ActionsScreen />}
       {tab === 'training' && <TrainingScreen />}
       {tab === 'more' && <MoreScreen />}
@@ -115,7 +114,13 @@ function BrandHeader({ title, right, onBack }: { title: string; right?: React.Re
         ) : null}
       </View>
       <View style={S.headerCenter}>
-        <Text style={S.brandName}>ALFAYADH PETROLEUM</Text>
+        <View style={S.brandLockup}>
+          <View style={S.brandMark}><View style={S.brandMarkInner} /></View>
+          <View>
+            <Text style={S.brandName}>ALFAYADH</Text>
+            <Text style={S.brandSubline}>PETROLEUM · HSE</Text>
+          </View>
+        </View>
       </View>
       <View style={S.headerRight}>{right}</View>
     </View>
@@ -126,7 +131,7 @@ function ScreenTitle({ title }: { title: string }) {
   return <Text style={S.screenTitle}>{title}</Text>;
 }
 
-function HomeScreen({ onFeed, onMedia }: { onFeed: () => void; onMedia: () => void }) {
+function HomeScreen({ onFeed, onMedia, onTraining, onIssues }: { onFeed: () => void; onMedia: () => void; onTraining: () => void; onIssues: () => void }) {
   const scrollRef = useRef<ScrollView>(null);
   return (
     <ScrollView ref={scrollRef} style={S.scroll} contentContainerStyle={S.scrollContent} showsVerticalScrollIndicator={false}>
@@ -138,8 +143,8 @@ function HomeScreen({ onFeed, onMedia }: { onFeed: () => void; onMedia: () => vo
           <HeadsUpCard image={IMG.wetFloor} tag="Heavy storms announced" author="Craig Tiley" status="Not viewed" onPress={onFeed} danger />
         </ScrollView>
         <View style={S.kpiRow}>
-          <KpiCard icon={<GraduationCap size={22} color={C.accent} strokeWidth={1.8} />} value="2" label="Training" />
-          <KpiCard icon={<Zap size={22} color={C.accent} strokeWidth={1.8} />} value="12" label="Open Issues" />
+          <KpiCard value="2" label="Training" onPress={onTraining} />
+          <KpiCard value="12" label="Open Issues" onPress={onIssues} />
         </View>
         <View style={S.sectionRow}>
           <Text style={S.sectionLabel}>Today</Text>
@@ -171,10 +176,10 @@ function HeadsUpCard({ image, tag, author, status, danger, onPress }: { image: s
   );
 }
 
-function KpiCard({ icon, value, label }: { icon: React.ReactNode; value: string; label: string }) {
+function KpiCard({ value, label, onPress }: { value: string; label: string; onPress: () => void }) {
   return (
-    <Pressable style={({ pressed }) => [S.kpiCard, pressed && S.cardPressed]}>
-      <View style={S.kpiIcon}>{icon}</View>
+    <Pressable onPress={onPress} style={({ pressed }) => [S.kpiCard, pressed && S.cardPressed]}>
+      <View style={S.kpiAccent} />
       <View style={S.kpiCopy}>
         <Text style={S.kpiValue}>{value}</Text>
         <Text style={S.kpiLabel}>{label}</Text>
@@ -208,15 +213,15 @@ function TaskRow({ category, title, meta, status, tone, last }: { category: stri
   );
 }
 
-function AssetScreen() {
+function AssetScreen({ onBack }: { onBack: () => void }) {
   return (
     <ScrollView style={S.scroll} contentContainerStyle={S.scrollContent} showsVerticalScrollIndicator={false}>
       <BrandHeader title="Profile" right={
         <View style={S.headerActions}>
-          <IconButton icon={<Filter size={18} color={C.inkSecondary} strokeWidth={1.8} />} onPress={() => undefined} />
-          <IconButton icon={<MoreHorizontal size={18} color={C.inkSecondary} strokeWidth={1.8} />} onPress={() => undefined} />
+          <IconButton icon={<Filter size={18} color={C.inkSecondary} strokeWidth={1.8} />} onPress={() => Alert.alert('Filter inspections', 'Showing all scheduled inspections.')} />
+          <IconButton icon={<MoreHorizontal size={18} color={C.inkSecondary} strokeWidth={1.8} />} onPress={() => Alert.alert('Asset options', 'Asset details are up to date.')} />
         </View>
-      } onBack={() => undefined} />
+      } onBack={onBack} />
       <View style={S.body}>
         <View style={S.assetHero}>
           <Image source={{ uri: IMG.truck }} style={S.assetImage} />
@@ -297,13 +302,14 @@ function MediaScreen({ onClose }: { onClose: () => void }) {
 
 function FeedScreen({ onClose }: { onClose: () => void }) {
   const [comment, setComment] = useState('');
+  const [acknowledged, setAcknowledged] = useState(false);
   return (
     <View style={S.fullScreen}>
       <View style={S.feedHeader}>
         <IconButton icon={<X size={22} color={C.ink} strokeWidth={1.8} />} onPress={onClose} />
-        <Pressable onPress={() => Alert.alert('Acknowledged', 'Marked as acknowledged.')} style={({ pressed }) => [S.ackBtn, pressed && S.cardPressed]}>
+        <Pressable onPress={() => setAcknowledged((current) => !current)} style={({ pressed }) => [S.ackBtn, acknowledged && S.ackBtnDone, pressed && S.cardPressed]}>
           <Check size={14} color={C.surface} strokeWidth={2.5} />
-          <Text style={S.ackText}>Acknowledge</Text>
+          <Text style={S.ackText}>{acknowledged ? 'Acknowledged' : 'Acknowledge'}</Text>
         </Pressable>
       </View>
       <ScrollView style={S.feedBody} showsVerticalScrollIndicator={false}>
@@ -340,7 +346,7 @@ function FeedScreen({ onClose }: { onClose: () => void }) {
       <View style={S.commentBar}>
         <Avatar initials="MM" color="#D3CCFF" />
         <TextInput value={comment} onChangeText={setComment} placeholder="Add a comment" placeholderTextColor={C.muted} style={S.commentInput} />
-        <Pressable onPress={() => { setComment(''); Alert.alert('Sent', 'Comment posted.'); }} style={({ pressed }) => [S.sendBtn, pressed && S.cardPressed]}>
+        <Pressable disabled={!comment.trim()} onPress={() => setComment('')} style={({ pressed }) => [S.sendBtn, !comment.trim() && S.sendBtnDisabled, pressed && S.cardPressed]}>
           <Send size={20} color={C.accent} strokeWidth={1.8} />
         </Pressable>
       </View>
@@ -365,8 +371,8 @@ function TrainingScreen() {
     <View style={S.screen}>
       <BrandHeader title="Training" />
       <View style={S.trainingTabs}>
-        <Text style={S.activeTab}>Learn</Text>
-        <Text style={S.inactiveTab}>Manage</Text>
+        <Pressable onPress={() => undefined} style={S.trainingTabButton}><Text style={S.activeTab}>Learn</Text></Pressable>
+        <Pressable onPress={() => Alert.alert('Training management', 'Training management is available to supervisors.')} style={S.trainingTabButton}><Text style={S.inactiveTab}>Manage</Text></Pressable>
       </View>
       <ScrollView contentContainerStyle={S.scrollContent} showsVerticalScrollIndicator={false}>
         <View style={S.body}>
@@ -432,12 +438,12 @@ function QuizOverlay({ onClose }: { onClose: () => void }) {
 function ActionsScreen() {
   return (
     <View style={S.screen}>
-      <BrandHeader title="Actions" right={<IconButton icon={<Plus size={21} color={C.accent} strokeWidth={2} />} onPress={() => Alert.alert('New Action', 'Create a corrective action.')} />} />
-      <View style={S.emptyState}>
+      <BrandHeader title="Actions" right={<IconButton icon={<Plus size={21} color={C.accent} strokeWidth={2} />} onPress={() => Alert.alert('New action', 'Choose an action type to continue.')} />} />
+      <Pressable onPress={() => Alert.alert('New action', 'Choose an action type to continue.')} style={({ pressed }) => [S.emptyState, pressed && S.cardPressed]}>
         <ClipboardCheck size={44} color={C.faint} strokeWidth={1.5} />
         <Text style={S.emptyTitle}>Stay on top of actions</Text>
         <Text style={S.emptyText}>Your assigned actions and follow-ups will appear here.</Text>
-      </View>
+      </Pressable>
     </View>
   );
 }
@@ -448,18 +454,18 @@ function MoreScreen() {
       <BrandHeader title="More" />
       <View style={S.body}>
         <View style={S.moreList}>
-          <MoreRow icon={<UserRound size={19} color={C.accent} strokeWidth={1.8} />} label="Profile and preferences" />
-          <MoreRow icon={<ImageIcon size={19} color={C.accent} strokeWidth={1.8} />} label="Media library" />
-          <MoreRow icon={<Menu size={19} color={C.accent} strokeWidth={1.8} />} label="Help and support" />
+          <MoreRow icon={<UserRound size={19} color={C.accent} strokeWidth={1.8} />} label="Profile and preferences" onPress={() => Alert.alert('Profile', 'Your profile settings are ready.')} />
+          <MoreRow icon={<ImageIcon size={19} color={C.accent} strokeWidth={1.8} />} label="Media library" onPress={() => Alert.alert('Media library', 'Your saved safety media will appear here.')} />
+          <MoreRow icon={<Menu size={19} color={C.accent} strokeWidth={1.8} />} label="Help and support" onPress={() => Alert.alert('Help and support', 'Contact your HSE administrator for assistance.')} />
         </View>
       </View>
     </View>
   );
 }
 
-function MoreRow({ icon, label }: { icon: React.ReactNode; label: string }) {
+function MoreRow({ icon, label, onPress }: { icon: React.ReactNode; label: string; onPress: () => void }) {
   return (
-    <Pressable style={({ pressed }) => [S.moreRow, pressed && S.cardPressed]}>
+    <Pressable onPress={onPress} style={({ pressed }) => [S.moreRow, pressed && S.cardPressed]}>
       <View style={S.moreIcon}>{icon}</View>
       <Text style={S.moreLabel} numberOfLines={1}>{label}</Text>
       <ChevronRight size={18} color={C.faint} strokeWidth={2} />
@@ -537,7 +543,7 @@ const S = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    // @ts-ignore — web-only CSS property
+    // @ts-ignore
     backdropFilter: 'blur(20px) saturate(180%)',
     WebkitBackdropFilter: 'blur(20px) saturate(180%)',
   },
@@ -545,52 +551,31 @@ const S = StyleSheet.create({
   headerCenter: { flex: 1, alignItems: 'center', paddingHorizontal: 8 },
   headerRight: { width: 44, flexDirection: 'row', alignItems: 'center', justifyContent: 'flex-end' },
   headerActions: { flexDirection: 'row', gap: 2 },
-  brandName: {
-    fontSize: 24,
-    fontWeight: '700',
-    fontFamily: 'Playfair Display, serif',
-    letterSpacing: 0.5,
-    textTransform: 'uppercase',
-    // @ts-ignore — web-only gradient text
-    backgroundImage: 'linear-gradient(135deg, #6B4EFF 0%, #9B7BFF 40%, #D4AF37 100%)',
-    WebkitBackgroundClip: 'text',
-    backgroundClip: 'text',
-    WebkitTextFillColor: 'transparent',
-    color: 'transparent',
-    // @ts-ignore — web-only text shadow
-    textShadow: '0 1px 2px rgba(107,78,255,0.12)',
-  },
+  brandLockup: { flexDirection: 'row', alignItems: 'center', gap: 9 },
+  brandMark: { width: 32, height: 32, borderRadius: 10, backgroundColor: C.accent, alignItems: 'center', justifyContent: 'center', transform: [{ rotate: '-8deg' }] },
+  brandMarkInner: { width: 13, height: 17, borderRadius: 8, borderWidth: 3, borderColor: C.surface, borderTopColor: 'transparent', transform: [{ rotate: '18deg' }] },
+  brandName: { fontSize: 19, fontWeight: '800', fontFamily: 'Montserrat, sans-serif', letterSpacing: 1.4, color: C.ink, lineHeight: 21 },
+  brandSubline: { fontSize: 8, fontWeight: '700', fontFamily: 'Montserrat, sans-serif', letterSpacing: 1.5, color: C.accent, marginTop: 2 },
   screenTitle: { fontSize: 28, fontWeight: '800', color: C.ink, letterSpacing: -0.5, paddingHorizontal: 20, paddingTop: 16, paddingBottom: 8 },
   sectionRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginTop: 28, marginBottom: 14 },
   sectionLabel: { fontSize: 22, fontWeight: '800', color: C.ink, letterSpacing: -0.3 },
   sectionAction: { fontSize: 14, fontWeight: '600', color: C.accent },
   hStrip: { paddingStart: 20, paddingEnd: 20, gap: 16 },
-  headsCard: {
-    width: 280, backgroundColor: C.surface,
-    borderRadius: 16, overflow: 'hidden',
-    borderWidth: 1, borderColor: C.border,
-  },
+  headsCard: { width: 280, backgroundColor: C.surface, borderRadius: 16, overflow: 'hidden', borderWidth: 1, borderColor: C.border },
   headsImage: { width: '100%', height: 130 },
   headsBody: { padding: 16 },
   headsTag: { fontSize: 16, fontWeight: '700', color: C.ink, letterSpacing: -0.2, minHeight: 44 },
   headsFooter: { flexDirection: 'row', alignItems: 'center', gap: 8, marginTop: 14 },
   headsAuthor: { fontSize: 13, fontWeight: '500', color: C.inkSecondary, flex: 1, minWidth: 0 },
   kpiRow: { flexDirection: 'row', justifyContent: 'space-between', gap: 16, marginTop: 20 },
-  kpiCard: {
-    flex: 1, minHeight: 96, backgroundColor: C.surface,
-    borderRadius: 18, padding: 16, flexDirection: 'row', alignItems: 'center', gap: 12,
-    borderWidth: 1, borderColor: C.border,
-  },
-  kpiIcon: { width: 40, height: 40, borderRadius: 12, backgroundColor: C.accentSoft, alignItems: 'center', justifyContent: 'center' },
+  kpiCard: { flex: 1, minHeight: 96, backgroundColor: C.surface, borderRadius: 18, padding: 16, flexDirection: 'row', alignItems: 'center', gap: 12, borderWidth: 1, borderColor: C.border },
+  kpiAccent: { width: 5, height: 48, borderRadius: 3, backgroundColor: C.sky },
   kpiCopy: { flex: 1 },
   kpiValue: { fontSize: 24, fontWeight: '800', color: C.ink, letterSpacing: -0.3, fontVariant: ['tabular-nums'] },
   kpiLabel: { fontSize: 13, fontWeight: '500', color: C.muted, marginTop: 2 },
   countBadge: { backgroundColor: C.accent, minWidth: 24, height: 24, borderRadius: 12, paddingHorizontal: 8, alignItems: 'center', justifyContent: 'center' },
   countBadgeText: { color: C.surface, fontSize: 12, fontWeight: '800', fontVariant: ['tabular-nums'] },
-  taskList: {
-    backgroundColor: C.surface, borderRadius: 18, borderWidth: 1, borderColor: C.border,
-    paddingHorizontal: 18, overflow: 'hidden',
-  },
+  taskList: { backgroundColor: C.surface, borderRadius: 18, borderWidth: 1, borderColor: C.border, paddingHorizontal: 18, overflow: 'hidden' },
   taskRow: { paddingVertical: 16, borderBottomWidth: 1, borderBottomColor: C.border },
   taskRowLast: { borderBottomWidth: 0 },
   taskRowTop: { flexDirection: 'row', alignItems: 'flex-start', justifyContent: 'space-between' },
@@ -598,10 +583,7 @@ const S = StyleSheet.create({
   taskCategory: { fontSize: 11, fontWeight: '700', color: C.accent, letterSpacing: 0.4, textTransform: 'uppercase' },
   taskTitle: { fontSize: 16, fontWeight: '700', color: C.ink, marginTop: 5, letterSpacing: -0.2 },
   taskMeta: { fontSize: 13, fontWeight: '400', color: C.muted, marginTop: 6 },
-  assetHero: {
-    backgroundColor: C.surface, borderRadius: 20, overflow: 'hidden',
-    borderWidth: 1, borderColor: C.border, marginTop: 20,
-  },
+  assetHero: { backgroundColor: C.surface, borderRadius: 20, overflow: 'hidden', borderWidth: 1, borderColor: C.border, marginTop: 20 },
   assetImage: { width: '100%', height: 200 },
   assetInfo: { padding: 18, flexDirection: 'row', alignItems: 'flex-start', justifyContent: 'space-between' },
   assetId: { fontSize: 22, fontWeight: '800', color: C.ink, letterSpacing: -0.3, fontVariant: ['tabular-nums'] },
@@ -609,10 +591,7 @@ const S = StyleSheet.create({
   assetLocation: { flexDirection: 'row', alignItems: 'center', gap: 5, backgroundColor: C.surfaceAlt, paddingHorizontal: 10, paddingVertical: 6, borderRadius: 10 },
   assetLocationText: { fontSize: 14, fontWeight: '600', color: C.inkSecondary },
   scheduleList: { gap: 14, marginTop: 4 },
-  scheduleCard: {
-    backgroundColor: C.surface, borderRadius: 18, padding: 18,
-    borderWidth: 1, borderColor: C.border,
-  },
+  scheduleCard: { backgroundColor: C.surface, borderRadius: 18, padding: 18, borderWidth: 1, borderColor: C.border },
   scheduleLast: { marginBottom: 24 },
   scheduleTop: { flexDirection: 'row', alignItems: 'flex-start', justifyContent: 'space-between' },
   scheduleTitle: { fontSize: 17, fontWeight: '700', color: C.ink, flex: 1, marginRight: 12, letterSpacing: -0.2, minWidth: 0 },
@@ -637,6 +616,7 @@ const S = StyleSheet.create({
   thumbImage: { width: '100%', height: '100%' },
   feedHeader: { height: 72, paddingHorizontal: 16, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', borderBottomWidth: 1, borderBottomColor: C.border },
   ackBtn: { minHeight: 40, paddingHorizontal: 16, borderRadius: 20, backgroundColor: C.accent, flexDirection: 'row', alignItems: 'center', gap: 6 },
+  ackBtnDone: { backgroundColor: C.green },
   ackText: { color: C.surface, fontSize: 13, fontWeight: '700' },
   feedBody: { flex: 1 },
   videoWrap: { height: 260, position: 'relative', backgroundColor: '#1C1C1E' },
@@ -658,7 +638,9 @@ const S = StyleSheet.create({
   commentBar: { minHeight: 72, borderTopWidth: 1, borderTopColor: C.border, backgroundColor: C.surface, paddingHorizontal: 14, flexDirection: 'row', alignItems: 'center', gap: 10 },
   commentInput: { flex: 1, height: 44, borderWidth: 1, borderColor: C.border, borderRadius: 22, paddingHorizontal: 16, fontSize: 14, fontWeight: '400', color: C.ink, backgroundColor: C.surfaceAlt },
   sendBtn: { width: 44, height: 44, borderRadius: 22, alignItems: 'center', justifyContent: 'center' },
+  sendBtnDisabled: { opacity: 0.35 },
   trainingTabs: { height: 52, backgroundColor: C.surface, borderBottomWidth: 1, borderBottomColor: C.border, flexDirection: 'row', alignItems: 'center' },
+  trainingTabButton: { flex: 1, alignItems: 'center', justifyContent: 'center', height: 52 },
   activeTab: { flex: 1, textAlign: 'center', fontSize: 15, fontWeight: '700', color: C.ink, paddingVertical: 16, borderBottomWidth: 2.5, borderBottomColor: C.accent },
   inactiveTab: { flex: 1, textAlign: 'center', fontSize: 15, fontWeight: '600', color: C.muted, paddingVertical: 16 },
   subHeading: { fontSize: 20, fontWeight: '800', color: C.ink, letterSpacing: -0.3, marginBottom: 14 },
@@ -673,7 +655,7 @@ const S = StyleSheet.create({
   progressTrack: { height: 8, borderRadius: 4, backgroundColor: C.accentSoft, marginTop: 16, overflow: 'hidden' },
   progressFill: { height: '100%', width: '68%', backgroundColor: C.accent, borderRadius: 4 },
   progressMeta: { fontSize: 13, fontWeight: '400', color: C.muted, marginTop: 10 },
-  quizOverlay: { position: 'absolute', inset: 0, backgroundColor: '#6956F6', paddingHorizontal: 24, paddingTop: 28 },
+  quizOverlay: { position: 'absolute', inset: 0, backgroundColor: C.accent, paddingHorizontal: 24, paddingTop: 28 },
   quizTop: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
   quizProgress: { fontSize: 16, fontWeight: '700', color: C.surface, fontVariant: ['tabular-nums'] },
   quizQuestion: { fontSize: 28, fontWeight: '800', color: C.surface, textAlign: 'center', marginTop: 80, lineHeight: 36, letterSpacing: -0.5 },
@@ -682,7 +664,7 @@ const S = StyleSheet.create({
   quizOption: { minHeight: 56, borderWidth: 2, borderColor: 'rgba(255,255,255,0.7)', borderRadius: 16, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 14 },
   quizSelected: { backgroundColor: C.surface, borderColor: C.surface },
   quizOptionText: { fontSize: 15, fontWeight: '700', color: C.surface },
-  quizSelectedText: { color: '#1C1C1E' },
+  quizSelectedText: { color: C.ink },
   quizContinue: { position: 'absolute', left: 24, right: 24, bottom: 32, minHeight: 56, borderRadius: 16, backgroundColor: C.surface, alignItems: 'center', justifyContent: 'center' },
   quizContinueText: { fontSize: 16, fontWeight: '800', color: C.accent },
   emptyState: { alignItems: 'center', justifyContent: 'center', flex: 1, padding: 40, gap: 14 },
@@ -692,15 +674,8 @@ const S = StyleSheet.create({
   moreRow: { minHeight: 64, backgroundColor: C.surface, borderRadius: 16, paddingHorizontal: 16, flexDirection: 'row', alignItems: 'center', gap: 13, borderWidth: 1, borderColor: C.border },
   moreIcon: { width: 38, height: 38, borderRadius: 12, backgroundColor: C.accentSoft, alignItems: 'center', justifyContent: 'center' },
   moreLabel: { flex: 1, fontSize: 15, fontWeight: '600', color: C.ink, minWidth: 0 },
-  bottomTabs: {
-    position: 'absolute', bottom: 0, left: 0, right: 0, height: 80,
-    backgroundColor: 'rgba(255,255,255,0.88)',
-    borderTopWidth: 1, borderTopColor: C.border,
-    flexDirection: 'row', alignItems: 'center', justifyContent: 'space-around', paddingBottom: 8,
-    // @ts-ignore — web-only CSS
-    backdropFilter: 'blur(20px) saturate(180%)',
-    WebkitBackdropFilter: 'blur(20px) saturate(180%)',
-  },
+  bottomTabs: { position: 'absolute', bottom: 0, left: 0, right: 0, height: 80, backgroundColor: 'rgba(255,255,255,0.88)', borderTopWidth: 1, borderTopColor: C.border, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-around', paddingBottom: 8, // @ts-ignore
+    backdropFilter: 'blur(20px) saturate(180%)', WebkitBackdropFilter: 'blur(20px) saturate(180%)' },
   tabItem: { alignItems: 'center', justifyContent: 'center', flex: 1, minHeight: 56, gap: 4, borderRadius: 12 },
   tabLabel: { fontSize: 10, fontWeight: '600', color: C.muted },
   tabLabelActive: { color: C.accent, fontWeight: '800' },
