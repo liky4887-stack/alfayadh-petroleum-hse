@@ -20,6 +20,19 @@ export const C = {
   blueBg: '#E8F2FF',
   blue: '#138FC2',
   sky: '#5BC0EB',
+  primary: '#2E7DFF',
+  primarySoft: '#E3F0FF',
+  primaryHover: '#1565C0',
+  canvasAlt: '#F5F7FA',
+  borderLight: '#E0E5EC',
+  inkLight: '#1A1A2E',
+  mutedLight: '#8A94A6',
+  successBg: '#E8F5E9',
+  success: '#2E7D32',
+  errorBg: '#FFEBEE',
+  errorLight: '#C62828',
+  warningBg: '#FFF8E1',
+  warning: '#F57F17',
 } as const;
 
 export const Dark = {
