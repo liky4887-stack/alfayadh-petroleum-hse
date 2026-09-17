@@ -15,12 +15,54 @@ interface ReportInput {
   location_lng?: number | null;
 }
 
+interface AssetItem {
+  id: string;
+  asset_code: string;
+  name: string;
+  type: string | null;
+  location: string | null;
+  status: string | null;
+  image_url: string | null;
+  created_at: string;
+}
+
+interface ActionItem {
+  id: string;
+  title: string;
+  description: string | null;
+  type: string | null;
+  priority: string | null;
+  assignee: string | null;
+  due_date: string | null;
+  status: string;
+  image_url: string | null;
+  asset_id: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+interface FeedItem {
+  id: string;
+  title: string;
+  body: string | null;
+  image_url: string | null;
+  author: string | null;
+  category: string | null;
+  created_at: string;
+}
+
 interface HSEStore {
   reports: HSEReport[];
+  assets: AssetItem[];
+  actions: ActionItem[];
+  feeds: FeedItem[];
   loading: boolean;
   isOnline: boolean;
   syncPending: number;
   loadReports: () => Promise<void>;
+  loadAssets: () => Promise<void>;
+  loadActions: () => Promise<void>;
+  loadFeeds: () => Promise<void>;
   submitReport: (input: ReportInput) => Promise<{ success: boolean; offline: boolean }>;
   subscribeToReports: () => () => void;
   setOnline: (online: boolean) => void;
@@ -44,6 +86,9 @@ async function saveQueue(q: QueuedReport[]) {
 
 export const useHSEStore = create<HSEStore>((set, get) => ({
   reports: [],
+  assets: [],
+  actions: [],
+  feeds: [],
   loading: true,
   isOnline: true,
   syncPending: 0,
@@ -59,6 +104,43 @@ export const useHSEStore = create<HSEStore>((set, get) => ({
       return;
     }
     set({ reports: data ?? [], loading: false });
+  },
+
+  loadAssets: async () => {
+    const { data, error } = await supabase
+      .from('assets')
+      .select('*')
+      .order('created_at', { ascending: false });
+    if (error) {
+      console.error('loadAssets error:', error);
+      return;
+    }
+    set({ assets: (data ?? []) as AssetItem[] });
+  },
+
+  loadActions: async () => {
+    const { data, error } = await supabase
+      .from('actions')
+      .select('*')
+      .order('created_at', { ascending: false });
+    if (error) {
+      console.error('loadActions error:', error);
+      return;
+    }
+    set({ actions: (data ?? []) as ActionItem[] });
+  },
+
+  loadFeeds: async () => {
+    const { data, error } = await supabase
+      .from('feeds')
+      .select('*')
+      .order('created_at', { ascending: false })
+      .limit(50);
+    if (error) {
+      console.error('loadFeeds error:', error);
+      return;
+    }
+    set({ feeds: (data ?? []) as FeedItem[] });
   },
 
   submitReport: async (input) => {
