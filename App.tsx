@@ -4,6 +4,9 @@ import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { I18nManager } from 'react-native';
 import AppNavigation from '@/navigation/AppNavigation';
 import { useHSEStore } from '@/lib/store';
+import { ErrorBoundary } from '@/components/ErrorBoundary';
+import { I18nProvider } from '@/lib/i18n';
+import { DepartmentProvider } from '@/lib/department';
 
 export default function App() {
   const subscribeToReports = useHSEStore((s) => s.subscribeToReports);
@@ -18,8 +21,14 @@ export default function App() {
 
   return (
     <SafeAreaProvider>
-      <AppNavigation />
-      <StatusBar style="dark" />
+      <ErrorBoundary>
+        <I18nProvider>
+          <DepartmentProvider>
+            <AppNavigation />
+            <StatusBar style="dark" />
+          </DepartmentProvider>
+        </I18nProvider>
+      </ErrorBoundary>
     </SafeAreaProvider>
   );
 }
