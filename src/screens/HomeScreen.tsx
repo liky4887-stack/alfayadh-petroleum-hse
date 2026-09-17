@@ -118,16 +118,22 @@ export default function HomeScreen({ navigation }: { navigation: NativeStackNavi
   );
 
   const handleLogoLongPress = async () => {
-    haptics.notificationWarning();
+    console.log('[ADMIN] handler fired');
+    try { haptics.impactHeavy(); } catch (e) { console.log('[ADMIN] haptic fail', e); }
     try {
       const session = await AsyncStorage.getItem('admin_session');
+      console.log('[ADMIN] session =', session);
       if (session === 'true') {
+        console.log('[ADMIN] navigating to AdminPanel');
         navigation.navigate('AdminPanel' as never);
       } else {
+        console.log('[ADMIN] navigating to AdminLogin');
         navigation.navigate('AdminLogin' as never);
       }
-    } catch {
-      navigation.navigate('AdminLogin' as never);
+      console.log('[ADMIN] navigate call returned');
+    } catch (e) {
+      console.log('[ADMIN] error:', e);
+      try { navigation.navigate('AdminLogin' as never); } catch (e2) { console.log('[ADMIN] fallback nav fail', e2); }
     }
   };
 
