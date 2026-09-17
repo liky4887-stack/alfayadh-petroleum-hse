@@ -14,6 +14,7 @@ import type { HSEReport } from '@/lib/types';
 export default function ReportDetailScreen({ navigation, route }: { navigation: NativeStackNavigationProp<RootStackParamList>; route: any }) {
   const haptics = useHapticFeedback();
   const reportId: string = route.params?.reportId ?? '';
+  const hasReportId = !!route.params?.reportId;
   const [report, setReport] = useState<HSEReport | null>(null);
   const [loading, setLoading] = useState(true);
   const [updating, setUpdating] = useState(false);
@@ -24,11 +25,16 @@ export default function ReportDetailScreen({ navigation, route }: { navigation: 
   const { confirm, dialog } = useConfirm();
 
   const loadReport = useCallback(async () => {
+    if (!hasReportId) {
+      setLoading(false);
+      setReport(null);
+      return;
+    }
     setLoading(true);
     const { data } = await supabase.from('hse_reports').select('*').eq('id', reportId).maybeSingle();
     setReport(data as HSEReport | null);
     setLoading(false);
-  }, [reportId]);
+  }, [reportId, hasReportId]);
 
   useEffect(() => { loadReport(); }, [loadReport]);
 
@@ -121,8 +127,11 @@ export default function ReportDetailScreen({ navigation, route }: { navigation: 
     return (
       <SafeAreaView style={S.screen} edges={['top']}>
         <View style={S.loadingWrap}>
-          <Text style={S.emptyText}>Report not found.</Text>
-          <Pressable onPress={() => navigation.goBack()}><Text style={S.backText}>Go Back</Text></Pressable>
+          <Text style={S.emptyText}>{hasReportId ? 'Report not found.' : 'No report ID provided.'}</Text>
+          <Pressable onPress={() => navigation.goBack()} style={({ pressed }) => [S.backBtn, pressed && S.pressed]}>
+            <ChevronLeft size={20} color="#0F172A" />
+            <Text style={S.backText}>Go Back</Text>
+          </Pressable>
         </View>
       </SafeAreaView>
     );
