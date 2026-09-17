@@ -1,23 +1,55 @@
 import { View, Text, Pressable, StyleSheet } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { UserRound, Image as ImageIcon, Menu, ChevronRight } from '@/lib/icons';
+import { UserRound, Image as ImageIcon, Menu, ChevronRight, Globe, LogOut } from '@/lib/icons';
 import { C } from '@/theme/colors';
 import { BrandHeader } from '@/components/Shared';
 import { useHapticFeedback } from '@/lib/haptics';
+import { useT, useLanguage } from '@/lib/i18n';
+import { supabase } from '@/lib/supabase';
 import type { ReactNode } from 'react';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import type { RootStackParamList } from '@/navigation/AppNavigation';
 
 export default function MoreScreen({ navigation }: { navigation: NativeStackNavigationProp<RootStackParamList> }) {
   const haptics = useHapticFeedback();
+  const t = useT();
+  const { lang, setLang } = useLanguage();
+
+  const handleLogout = async () => {
+    haptics.impactMedium();
+    try { await supabase.auth.signOut(); } catch { /* ignore */ }
+  };
+
   return (
     <SafeAreaView style={S.screen} edges={['top']}>
-      <BrandHeader title="More" />
+      <BrandHeader title={t('more')} />
       <View style={S.body}>
         <View style={S.moreList}>
-          <MoreRow icon={<UserRound size={19} color={C.accent} strokeWidth={1.8} />} label="Profile and preferences" onPress={() => { haptics.impactMedium(); navigation.navigate('Profile'); }} />
-          <MoreRow icon={<ImageIcon size={19} color={C.accent} strokeWidth={1.8} />} label="Media library" onPress={() => { haptics.impactMedium(); navigation.navigate('MediaLibrary'); }} />
-          <MoreRow icon={<Menu size={19} color={C.accent} strokeWidth={1.8} />} label="Help and support" onPress={() => { haptics.impactMedium(); navigation.navigate('Help'); }} />
+          <MoreRow icon={<UserRound size={19} color={C.accent} strokeWidth={1.8} />} label={t('profile')} onPress={() => { haptics.impactMedium(); navigation.navigate('Profile'); }} />
+          <MoreRow icon={<ImageIcon size={19} color={C.accent} strokeWidth={1.8} />} label={t('mediaLibrary')} onPress={() => { haptics.impactMedium(); navigation.navigate('MediaLibrary'); }} />
+          <MoreRow icon={<Menu size={19} color={C.accent} strokeWidth={1.8} />} label={t('helpSupport')} onPress={() => { haptics.impactMedium(); navigation.navigate('Help'); }} />
+        </View>
+
+        <Text style={S.sectionTitle}>{t('language')}</Text>
+        <View style={S.langRow}>
+          <Pressable
+            onPress={() => { haptics.impactMedium(); setLang('en'); }}
+            style={({ pressed }) => [S.langBtn, lang === 'en' && S.langBtnActive, pressed && S.cardPressed]}
+          >
+            <Globe size={16} color={lang === 'en' ? '#FFF' : C.accent} strokeWidth={2} />
+            <Text style={[S.langText, lang === 'en' && S.langTextActive]}>{t('english')}</Text>
+          </Pressable>
+          <Pressable
+            onPress={() => { haptics.impactMedium(); setLang('ar'); }}
+            style={({ pressed }) => [S.langBtn, lang === 'ar' && S.langBtnActive, pressed && S.cardPressed]}
+          >
+            <Globe size={16} color={lang === 'ar' ? '#FFF' : C.accent} strokeWidth={2} />
+            <Text style={[S.langText, lang === 'ar' && S.langTextActive]}>{t('arabic')}</Text>
+          </Pressable>
+        </View>
+
+        <View style={S.moreList}>
+          <MoreRow icon={<LogOut size={19} color={C.red} strokeWidth={1.8} />} label={t('logout')} onPress={handleLogout} />
         </View>
       </View>
     </SafeAreaView>
@@ -41,5 +73,11 @@ const S = StyleSheet.create({
   moreRow: { minHeight: 64, backgroundColor: '#FFFFFF', borderRadius: 16, paddingHorizontal: 16, flexDirection: 'row', alignItems: 'center', gap: 13, borderWidth: 1, borderColor: C.border },
   moreIcon: { width: 38, height: 38, borderRadius: 12, backgroundColor: C.accentSoft, alignItems: 'center', justifyContent: 'center' },
   moreLabel: { flex: 1, fontSize: 15, fontWeight: '600', color: C.ink, minWidth: 0 },
+  sectionTitle: { fontSize: 18, fontWeight: '800', color: C.ink, marginTop: 32, marginBottom: 14 },
+  langRow: { flexDirection: 'row', gap: 12 },
+  langBtn: { flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, paddingVertical: 14, borderRadius: 12, borderWidth: 1, borderColor: C.border, backgroundColor: '#FFF' },
+  langBtnActive: { backgroundColor: C.accent, borderColor: C.accent },
+  langText: { fontSize: 15, fontWeight: '600', color: C.accent },
+  langTextActive: { color: '#FFF', fontWeight: '700' },
   cardPressed: { opacity: 0.6 },
 });
