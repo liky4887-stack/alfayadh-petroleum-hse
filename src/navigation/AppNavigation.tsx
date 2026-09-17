@@ -28,6 +28,9 @@ import NewCourseScreen from '@/screens/NewCourseScreen';
 import CourseDetailScreen from '@/screens/CourseDetailScreen';
 import ReportDetailScreen from '@/screens/ReportDetailScreen';
 import AssetDetailScreen from '@/screens/AssetDetailScreen';
+import ActionDetailScreen from '@/screens/ActionDetailScreen';
+import AdminLoginScreen from '@/screens/AdminLoginScreen';
+import FeedDetailScreen from '@/screens/FeedDetailScreen';
 import LoginScreen from '@/screens/LoginScreen';
 import AdminGateScreen from '@/screens/AdminGateScreen';
 import AdminPanelScreen from '@/screens/AdminPanelScreen';
@@ -50,8 +53,9 @@ export type RootStackParamList = {
   Admin: undefined;
   Media: undefined;
   Feed: undefined;
-  NewAction: undefined;
-  NewAsset: undefined;
+  FeedDetail: { feedId: string } | undefined;
+  NewAction: { mode?: string; actionId?: string } | undefined;
+  NewAsset: { mode?: string; assetId?: string } | undefined;
   Profile: undefined;
   MediaLibrary: undefined;
   Help: undefined;
@@ -60,8 +64,10 @@ export type RootStackParamList = {
   CourseDetail: { courseId: string } | undefined;
   ReportDetail: { reportId: string } | undefined;
   AssetDetail: { assetId: string } | undefined;
+  ActionDetail: { actionId: string } | undefined;
   Actions: { filter?: string } | undefined;
   AdminGate: undefined;
+  AdminLogin: undefined;
   AdminPanel: undefined;
 };
 
@@ -167,8 +173,11 @@ export default function Navigation() {
             <Stack.Screen name="CourseDetail" component={CourseDetailScreen} />
             <Stack.Screen name="ReportDetail" component={ReportDetailScreen} />
             <Stack.Screen name="AssetDetail" component={AssetDetailScreen} />
+            <Stack.Screen name="ActionDetail" component={ActionDetailScreen} />
             <Stack.Screen name="AdminGate" component={AdminGateScreen} />
+            <Stack.Screen name="AdminLogin" component={AdminLoginScreen} />
             <Stack.Screen name="AdminPanel" component={AdminPanelScreen} />
+            <Stack.Screen name="FeedDetail" component={FeedDetailScreen} />
           </>
         )}
       </Stack.Navigator>

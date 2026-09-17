@@ -1,4 +1,6 @@
+import { useEffect, useState } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { ArrowLeft, BarChart3 } from '@/lib/icons';
 import { useHSEStore } from '@/lib/store';
 import { useHapticFeedback } from '@/lib/haptics';
@@ -13,18 +15,31 @@ interface HeaderProps {
   currentScreen: ScreenName;
   navigation: NativeStackNavigationProp<RootStackParamList>;
   showBack?: boolean;
-  isAdmin?: boolean;
 }
 
-export function Header({ title, currentScreen, navigation, showBack, isAdmin }: HeaderProps) {
+export function Header({ title, currentScreen, navigation, showBack }: HeaderProps) {
   const { isOnline, syncPending } = useHSEStore();
   const { pending, syncing } = useSyncStatus();
   const haptics = useHapticFeedback();
+  const [isAdminAuthed, setIsAdminAuthed] = useState(false);
 
-  const handleLongPress = () => {
-    if (!isAdmin) return;
+  useEffect(() => {
+    (async () => {
+      try {
+        const session = await AsyncStorage.getItem('admin_session');
+        setIsAdminAuthed(session === 'true');
+      } catch { /* ignore */ }
+    })();
+  }, []);
+
+  const handleLongPress = async () => {
     haptics.notificationError();
-    navigation.navigate('AdminGate');
+    const session = await AsyncStorage.getItem('admin_session');
+    if (session === 'true') {
+      navigation.navigate('AdminPanel');
+    } else {
+      navigation.navigate('AdminLogin');
+    }
   };
 
   return (
@@ -55,9 +70,7 @@ export function Header({ title, currentScreen, navigation, showBack, isAdmin }: 
         <Pressable
           onLongPress={handleLongPress}
           delayLongPress={3000}
-          onPressIn={() => haptics.impactMedium()}
           hitSlop={8}
-          disabled={!isAdmin}
         >
           <Text style={S.title} numberOfLines={1}>{title}</Text>
         </Pressable>
