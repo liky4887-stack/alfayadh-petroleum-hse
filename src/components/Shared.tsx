@@ -1,5 +1,5 @@
 import { Pressable, StyleSheet, Text, View } from 'react-native';
-import { ChevronRight } from '@/lib/icons';
+import { ChevronRight, MoreHorizontal, Filter, Bell, X } from 'lucide-react';
 import { C } from '@/theme/colors';
 import { useHapticFeedback } from '@/lib/haptics';
 import type { ReactNode } from 'react';
@@ -8,9 +8,11 @@ interface BrandHeaderProps {
   title: string;
   right?: ReactNode;
   onBack?: () => void;
+  onLogoLongPress?: () => void;
 }
 
-export function BrandHeader({ title, right, onBack }: BrandHeaderProps) {
+export function BrandHeader({ title, right, onBack, onLogoLongPress }: BrandHeaderProps) {
+  const haptics = useHapticFeedback();
   return (
     <View style={S.header}>
       <View style={S.headerLeft}>
@@ -19,10 +21,18 @@ export function BrandHeader({ title, right, onBack }: BrandHeaderProps) {
         ) : null}
       </View>
       <View style={S.headerCenter}>
-        <View>
-          <Text style={S.brandName}>ALFAYADH</Text>
-          <Text style={S.brandSubline}>PETROLEUM · HSE</Text>
-        </View>
+        <Pressable
+          onLongPress={onLogoLongPress}
+          delayLongPress={3000}
+          onPressIn={() => haptics.impactMedium()}
+          hitSlop={8}
+          disabled={!onLogoLongPress}
+        >
+          <View>
+            <Text style={S.brandName} numberOfLines={1}>ALFAYADH</Text>
+            <Text style={S.brandSubline}>PETROLEUM · HSE</Text>
+          </View>
+        </Pressable>
       </View>
       <View style={S.headerRight}>{right}</View>
     </View>
@@ -49,12 +59,14 @@ export function Avatar({ initials, color }: { initials: string; color: string })
   );
 }
 
-export function StatusPill({ label, tone }: { label: string; tone: 'green' | 'red' | 'orange' | 'blue' }) {
+export function StatusPill({ label, tone }: { label: string; tone: 'green' | 'red' | 'orange' | 'blue' | 'yellow' | 'gray' }) {
   const map = {
     green: [C.greenBg, C.green],
     red: [C.redBg, C.red],
     orange: [C.orangeBg, C.orange],
     blue: [C.blueBg, C.blue],
+    yellow: [C.warningBg, C.warning],
+    gray: [C.surfaceAlt, C.muted],
   } as const;
   const [bg, fg] = map[tone];
   return (
@@ -64,11 +76,16 @@ export function StatusPill({ label, tone }: { label: string; tone: 'green' | 're
   );
 }
 
-export function SectionLabel({ title, action }: { title: string; action?: string }) {
+export function SectionLabel({ title, action, onAction }: { title: string; action?: string; onAction?: () => void }) {
+  const haptics = useHapticFeedback();
   return (
     <View style={S.sectionRow}>
       <Text style={S.sectionLabel}>{title}</Text>
-      {action && <Text style={S.sectionAction}>{action}</Text>}
+      {action && (
+        <Pressable onPress={() => { haptics.impactMedium(); onAction?.(); }} hitSlop={8}>
+          <Text style={S.sectionAction}>{action}</Text>
+        </Pressable>
+      )}
     </View>
   );
 }
@@ -85,9 +102,9 @@ const S = StyleSheet.create({
     justifyContent: 'space-between',
   },
   headerLeft: { width: 44, alignItems: 'center' },
-  headerCenter: { flex: 1, alignItems: 'center' },
-  headerRight: { width: 44, alignItems: 'center' },
-  brandName: { fontSize: 19, fontWeight: '800', letterSpacing: 1.4, color: C.ink, lineHeight: 21 },
+  headerCenter: { flex: 1, alignItems: 'center', marginEnd: 8 },
+  headerRight: { flexShrink: 0, maxWidth: 140, alignItems: 'center' },
+  brandName: { fontSize: 20, fontWeight: '800', letterSpacing: 2, color: C.ink, lineHeight: 22 },
   brandSubline: { fontSize: 8, fontWeight: '700', letterSpacing: 1.5, color: C.accent, marginTop: 2 },
   iconBtn: { width: 44, height: 44, alignItems: 'center', justifyContent: 'center', borderRadius: 12 },
   cardPressed: { opacity: 0.6 },

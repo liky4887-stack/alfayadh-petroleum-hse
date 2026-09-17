@@ -1,11 +1,11 @@
 import { useEffect, useRef } from 'react';
 import { Animated, StyleSheet, Text, View } from 'react-native';
-import { CheckCircle2, XCircle } from '@/lib/icons';
+import { CheckCircle2, XCircle, Info } from 'lucide-react';
 import { C } from '@/theme/colors';
 
 interface ToastProps {
   message: string;
-  type?: 'success' | 'error';
+  type?: 'success' | 'error' | 'info';
   visible: boolean;
   onHide: () => void;
 }
@@ -25,10 +25,9 @@ export function Toast({ message, type = 'success', visible, onHide }: ToastProps
 
   if (!visible) return null;
 
-  const isErr = type === 'error';
-  const bg = isErr ? C.errorBg : C.successBg;
-  const fg = isErr ? C.errorLight : C.success;
-  const Icon = isErr ? XCircle : CheckCircle2;
+  const bg = type === 'error' ? C.errorBg : type === 'info' ? C.blueBg : C.successBg;
+  const fg = type === 'error' ? C.errorLight : type === 'info' ? C.blue : C.success;
+  const Icon = type === 'error' ? XCircle : type === 'info' ? Info : CheckCircle2;
 
   return (
     <Animated.View style={[S.wrap, { opacity, backgroundColor: bg, borderColor: `${fg}55` }]}>
@@ -52,7 +51,11 @@ const S = StyleSheet.create({
     borderRadius: 12,
     borderWidth: 1,
     zIndex: 100,
-    elevation: 5,
+    elevation: 2,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.05,
+    shadowRadius: 2,
   },
   text: { fontSize: 14, fontWeight: '600', flex: 1 },
 });

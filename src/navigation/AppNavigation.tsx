@@ -27,6 +27,7 @@ import TrainingManageScreen from '@/screens/TrainingManageScreen';
 import NewCourseScreen from '@/screens/NewCourseScreen';
 import CourseDetailScreen from '@/screens/CourseDetailScreen';
 import ReportDetailScreen from '@/screens/ReportDetailScreen';
+import AssetDetailScreen from '@/screens/AssetDetailScreen';
 import LoginScreen from '@/screens/LoginScreen';
 import AdminGateScreen from '@/screens/AdminGateScreen';
 import AdminPanelScreen from '@/screens/AdminPanelScreen';
@@ -38,9 +39,10 @@ import {
   GraduationCap,
   MoreHorizontal,
 } from '@/lib/icons';
-import type { LucideIcon } from '@/lib/icons';
+import type { LucideIcon } from 'lucide-react';
 
 export type RootStackParamList = {
+  Login: undefined;
   MainTabs: undefined;
   Dashboard: undefined;
   SafeReport: undefined;
@@ -57,6 +59,7 @@ export type RootStackParamList = {
   NewCourse: undefined;
   CourseDetail: { courseId: string } | undefined;
   ReportDetail: { reportId: string } | undefined;
+  AssetDetail: { assetId: string } | undefined;
   Actions: { filter?: string } | undefined;
   AdminGate: undefined;
   AdminPanel: undefined;
@@ -163,10 +166,11 @@ export default function Navigation() {
             <Stack.Screen name="NewCourse" component={NewCourseScreen} />
             <Stack.Screen name="CourseDetail" component={CourseDetailScreen} />
             <Stack.Screen name="ReportDetail" component={ReportDetailScreen} />
+            <Stack.Screen name="AssetDetail" component={AssetDetailScreen} />
             <Stack.Screen name="AdminGate" component={AdminGateScreen} />
             <Stack.Screen name="AdminPanel" component={AdminPanelScreen} />
           </>
-        )
+        )}
       </Stack.Navigator>
     </NavigationContainer>
   );

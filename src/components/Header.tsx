@@ -1,5 +1,5 @@
 import { Pressable, StyleSheet, Text, View } from 'react-native';
-import { ArrowLeft, BarChart3 } from '@/lib/icons';
+import { ArrowLeft, BarChart3 } from 'lucide-react';
 import { Dark } from '@/theme/colors';
 import { useHSEStore } from '@/lib/store';
 import { useHapticFeedback } from '@/lib/haptics';
@@ -24,7 +24,7 @@ export function Header({ title, currentScreen, navigation, showBack, isAdmin }: 
 
   const handleLongPress = () => {
     if (!isAdmin) return;
-    haptics.impactMedium();
+    haptics.notificationError();
     navigation.navigate('AdminGate');
   };
 
@@ -39,7 +39,7 @@ export function Header({ title, currentScreen, navigation, showBack, isAdmin }: 
               style={({ pressed }) => [S.backBtn, pressed && S.pressed]}
             >
               <ArrowLeft size={20} color={Dark.steel} />
-              <Text style={S.backText}>رجوع</Text>
+              <Text style={S.backText}>Back</Text>
             </Pressable>
           ) : currentScreen === 'Dashboard' ? (
             <Pressable
@@ -48,24 +48,30 @@ export function Header({ title, currentScreen, navigation, showBack, isAdmin }: 
               style={({ pressed }) => [S.backBtn, pressed && S.pressed]}
             >
               <BarChart3 size={18} color={Dark.steel} />
-              <Text style={S.adminText}>لوحة المسؤول</Text>
+              <Text style={S.adminText}>Admin</Text>
             </Pressable>
           ) : null}
         </View>
 
-        <Pressable onLongPress={handleLongPress} delayLongPress={800} hitSlop={8}>
-          <Text style={S.title}>{title}</Text>
+        <Pressable
+          onLongPress={handleLongPress}
+          delayLongPress={3000}
+          onPressIn={() => haptics.impactMedium()}
+          hitSlop={8}
+          disabled={!isAdmin}
+        >
+          <Text style={S.title} numberOfLines={1}>{title}</Text>
         </Pressable>
 
         <View style={S.right}>
           {syncing ? (
             <View style={S.syncPill}>
-              <Text style={S.syncText}>مزامنة</Text>
+              <Text style={S.syncText}>Syncing</Text>
             </View>
           ) : !isOnline ? (
             <View style={S.offlinePill}>
               <Text style={S.offlineText}>
-                غير متصل{syncPending > 0 ? ` · ${syncPending}` : ''}
+                Offline{syncPending > 0 ? ` · ${syncPending}` : ''}
               </Text>
             </View>
           ) : pending > 0 ? (
@@ -100,7 +106,7 @@ const S = StyleSheet.create({
   backBtn: { flexDirection: 'row', alignItems: 'center', gap: 4 },
   backText: { color: Dark.steel, fontSize: 14 },
   adminText: { color: Dark.steel, fontSize: 13, fontWeight: '600' },
-  title: { fontWeight: '800', fontSize: 18, color: Dark.offWhite, letterSpacing: -0.2 },
+  title: { fontWeight: '800', fontSize: 20, color: Dark.offWhite, letterSpacing: 2, flex: 1, textAlign: 'center', marginEnd: 8 },
   right: { flexDirection: 'row', alignItems: 'center', gap: 8, minWidth: 100, justifyContent: 'flex-end' },
   onlineDot: { width: 8, height: 8, borderRadius: 4, backgroundColor: Dark.green },
   offlinePill: {

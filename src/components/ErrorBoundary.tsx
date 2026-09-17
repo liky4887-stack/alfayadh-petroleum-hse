@@ -6,7 +6,7 @@ interface Props { children: ReactNode; }
 interface State { hasError: boolean; message: string; }
 
 export class ErrorBoundary extends Component<Props, State> {
-  state: State = { hasError: false, message: '' };
+  override state: State = { hasError: false, message: '' };
 
   static getDerivedStateFromError(error: Error): State {
     return { hasError: true, message: error.message || 'Something went wrong' };
@@ -16,7 +16,7 @@ export class ErrorBoundary extends Component<Props, State> {
     this.setState({ hasError: false, message: '' });
   };
 
-  render() {
+  override render() {
     if (!this.state.hasError) return this.props.children;
     return (
       <View style={S.screen}>
