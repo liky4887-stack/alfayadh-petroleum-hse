@@ -2,7 +2,7 @@ import { useState, useCallback } from 'react';
 import { View, Text, Pressable, StyleSheet, FlatList, Image, Dimensions } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import * as ImagePicker from 'expo-image-picker';
-import { ChevronRight, Plus, X, Camera } from 'lucide-react';
+import { ChevronRight, Plus, X, Camera } from '@/lib/icons';
 import { C } from '@/theme/colors';
 import { useHapticFeedback } from '@/lib/haptics';
 import { Toast } from '@/components/Toast';
@@ -29,7 +29,7 @@ export default function MediaLibraryScreen({ navigation }: { navigation: NativeS
       setToast({ visible: true, msg: 'Permission required to access photos' });
       return;
     }
-    const result = await ImagePicker.launchImageLibraryAsync({ mediaTypes: ImagePicker.MediaTypeOptions.Images, quality: 0.8 });
+    const result = await ImagePicker.launchImageLibraryAsync({ mediaTypes: ['images'], quality: 0.8 });
     if (result.cancelled) return;
     const newItems: MediaItem[] = [{ id: `img_${Date.now()}`, uri: result.uri }];
     setItems((prev) => [...newItems, ...prev]);

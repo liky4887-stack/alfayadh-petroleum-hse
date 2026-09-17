@@ -45,7 +45,7 @@ export default function UnsafeReportScreen({ navigation }: { navigation: NativeS
     haptics.impactMedium();
     const { status } = await ImagePicker.requestCameraRollPermissionsAsync();
     if (status !== 'granted') { Alert.alert('تنبيه', 'يلزم إذن الوصول للصور'); return; }
-    const result = await ImagePicker.launchImageLibraryAsync({ mediaTypes: ImagePicker.MediaTypeOptions.Images, quality: 0.8 });
+    const result = await ImagePicker.launchImageLibraryAsync({ mediaTypes: ['images'], quality: 0.8 });
     if (!result.cancelled && result.uri) { setImageUri(result.uri); haptics.notificationSuccess(); }
   };
   const handleDepartment = (dept: string) => { haptics.selection(); setDepartment(dept); setSubcategory(null); };

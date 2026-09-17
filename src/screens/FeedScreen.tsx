@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { View, Text, Pressable, ScrollView, StyleSheet, TextInput, Alert, Image } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { X, Check, CheckCircle2, Eye, Play, Send } from 'lucide-react';
+import { X, Check, CheckCircle2, Eye, Play, Send } from '@/lib/icons';
 import { C, IMG } from '@/theme/colors';
 import { IconButton, Avatar } from '@/components/Shared';
 import { useHapticFeedback } from '@/lib/haptics';

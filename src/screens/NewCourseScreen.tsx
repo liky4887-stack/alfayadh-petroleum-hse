@@ -29,7 +29,7 @@ export default function NewCourseScreen({ navigation }: { navigation: NativeStac
       setError('Photo library permission is required.');
       return;
     }
-    const result = await ImagePicker.launchImageLibraryAsync({ mediaTypes: ImagePicker.MediaTypeOptions.Images, quality: 0.8 });
+    const result = await ImagePicker.launchImageLibraryAsync({ mediaTypes: ['images'], quality: 0.8 });
     if (!result.cancelled && result.uri) {
       setImageUri(result.uri);
       haptics.notificationSuccess();

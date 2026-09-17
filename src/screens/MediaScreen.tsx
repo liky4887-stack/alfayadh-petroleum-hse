@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { View, Text, Pressable, ScrollView, StyleSheet, Alert, Image } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { ChevronRight, Trash2, Pencil } from 'lucide-react';
+import { ChevronRight, Trash2, Pencil } from '@/lib/icons';
 import { C, IMG } from '@/theme/colors';
 import { IconButton } from '@/components/Shared';
 import { useHapticFeedback } from '@/lib/haptics';
