@@ -1,4 +1,5 @@
 import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { useRef } from 'react';
 import { ChevronRight, MoreHorizontal, Filter, Bell, X } from '@/lib/icons';
 import { C } from '@/theme/colors';
 import { useHapticFeedback } from '@/lib/haptics';
@@ -13,6 +14,9 @@ interface BrandHeaderProps {
 
 export function BrandHeader({ title, right, onBack, onLogoLongPress }: BrandHeaderProps) {
   const haptics = useHapticFeedback();
+  const tapCount = useRef(0);
+  const tapTimer = useRef(0);
+
   return (
     <View style={S.header}>
       <View style={S.headerLeft}>
@@ -23,10 +27,24 @@ export function BrandHeader({ title, right, onBack, onLogoLongPress }: BrandHead
       <View style={S.headerCenter}>
         <Pressable
           onLongPress={onLogoLongPress}
-          delayLongPress={1500}
-          onPressIn={() => haptics.impactMedium()}
-          hitSlop={8}
-          disabled={!onLogoLongPress}
+          delayLongPress={1200}
+          onPress={() => {
+            haptics.impactMedium();
+            if (!onLogoLongPress) return;
+            const now = Date.now();
+            if (now - tapTimer.current > 3000) {
+              tapCount.current = 0;
+            }
+            tapCount.current += 1;
+            tapTimer.current = now;
+            console.log('[LOGO TAP]', tapCount.current);
+            if (tapCount.current >= 5) {
+              tapCount.current = 0;
+              onLogoLongPress();
+            }
+          }}
+          hitSlop={{ top: 20, bottom: 20, left: 40, right: 40 }}
+          style={({ pressed }) => [{ opacity: pressed ? 0.7 : 1, paddingVertical: 4, paddingHorizontal: 8 }]}
         >
           <View>
             <Text style={S.brandName} numberOfLines={1}>ALFAYADH</Text>
