@@ -2,9 +2,10 @@ import { useState, useEffect } from 'react';
 import { View, Text, ScrollView, Pressable, StyleSheet, TextInput as RNTextInput, Modal, FlatList, ActivityIndicator } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import * as ImagePicker from 'expo-image-picker';
-import { ChevronRight, Check, Link2, ClipboardCheck, Camera } from '@/lib/icons';
+import { ChevronLeft, Check, Link2, ClipboardCheck, Camera } from '@/lib/icons';
 import { C } from '@/theme/colors';
 import { supabase } from '@/lib/supabase';
+import { useHSEStore } from '@/lib/store';
 import { useHapticFeedback } from '@/lib/haptics';
 import { Toast } from '@/components/Toast';
 import { uploadImage } from '@/lib/uploadImage';
@@ -20,7 +21,9 @@ interface Asset {
   name: string;
 }
 
-export default function NewActionScreen({ navigation }: { navigation: NativeStackNavigationProp<RootStackParamList> }) {
+export default function NewActionScreen({ navigation, route }: { navigation: NativeStackNavigationProp<RootStackParamList>; route: any }) {
+  const editMode = route.params?.mode === 'edit';
+  const editActionId: string | undefined = route.params?.actionId;
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
   const [type, setType] = useState<string | null>(null);
@@ -42,7 +45,21 @@ export default function NewActionScreen({ navigation }: { navigation: NativeStac
       if (error) console.error('Asset load error:', error);
       if (data) setAssets(data);
     });
-  }, []);
+    if (editMode && editActionId) {
+      supabase.from('actions').select('*').eq('id', editActionId).maybeSingle().then(({ data }) => {
+        if (data) {
+          setTitle(data.title ?? '');
+          setDescription(data.description ?? '');
+          setType(data.type ?? null);
+          setPriority(data.priority ?? null);
+          setAssignee(data.assignee ?? '');
+          setDueDate(data.due_date ?? '');
+          setAssetId(data.asset_id ?? null);
+          setImageUri(data.image_url ?? null);
+        }
+      });
+    }
+  }, [editMode, editActionId]);
 
   const validate = () => {
     const e: Record<string, string> = {};
@@ -61,7 +78,7 @@ export default function NewActionScreen({ navigation }: { navigation: NativeStac
         setToast({ visible: true, msg: 'Permission required to access photos', type: 'error' });
         return;
       }
-      const result = await ImagePicker.launchImageLibraryAsync({ mediaTypes: ['images'], quality: 0.8 });
+      const result = await ImagePicker.launchImageLibraryAsync({ mediaTypes: ImagePicker.MediaTypeOptions.Images, quality: 0.8 });
       if (!result.cancelled && result.uri) {
         setImageUri(result.uri);
       }
@@ -101,25 +118,41 @@ export default function NewActionScreen({ navigation }: { navigation: NativeStac
       priority,
       assignee: assignee.trim() || null,
       due_date: dueDate.trim() || null,
-      status: 'todo',
       image_url: imageUrl,
       asset_id: assetId,
     };
 
     try {
-      const { data, error } = await supabase.from('actions').insert(payload).select().single();
-      setSaving(false);
-      if (error) {
-        console.error('[NewAction] Insert error:', error);
-        haptics.notificationError();
-        setToast({ visible: true, msg: `Failed: ${error.message}`, type: 'error' });
-        return;
+      if (editMode && editActionId) {
+        const { error } = await supabase.from('actions').update(payload).eq('id', editActionId);
+        setSaving(false);
+        if (error) {
+          haptics.notificationError();
+          setToast({ visible: true, msg: `Failed: ${error.message}`, type: 'error' });
+          return;
+        }
+        await useHSEStore.getState().loadActions();
+        haptics.notificationSuccess();
+        navigation.replace('ActionDetail', { actionId: editActionId });
+      } else {
+        const payloadInsert = { ...payload, status: 'todo' };
+        const { data, error } = await supabase.from('actions').insert(payloadInsert).select().single();
+        setSaving(false);
+        if (error) {
+          haptics.notificationError();
+          setToast({ visible: true, msg: `Failed: ${error.message}`, type: 'error' });
+          return;
+        }
+        await useHSEStore.getState().loadActions();
+        haptics.notificationSuccess();
+        if (data) {
+          navigation.replace('ActionDetail', { actionId: data.id });
+        } else {
+          navigation.goBack();
+        }
       }
-      haptics.notificationSuccess();
-      setToast({ visible: true, msg: 'Action saved', type: 'success' });
-      setTimeout(() => navigation.goBack(), 500);
     } catch (err) {
-      console.error('[NewAction] Insert exception:', err);
+      console.error('[NewAction] Save exception:', err);
       setSaving(false);
       haptics.notificationError();
       setToast({ visible: true, msg: 'Failed to save action', type: 'error' });
@@ -137,10 +170,10 @@ export default function NewActionScreen({ navigation }: { navigation: NativeStac
     <SafeAreaView style={S.screen} edges={['top']}>
       <View style={S.header}>
         <Pressable onPress={() => { haptics.impactMedium(); navigation.goBack(); }} style={S.backBtn}>
-          <ChevronRight size={22} color={C.ink} />
+          <ChevronLeft size={20} color={C.ink} />
           <Text style={S.backText}>Back</Text>
         </Pressable>
-        <Text style={S.headerTitle}>New Action</Text>
+        <Text style={S.headerTitle}>{editMode ? 'Edit Action' : 'New Action'}</Text>
         <View style={{ width: 70 }} />
       </View>
       <ScrollView style={S.scroll} contentContainerStyle={S.scrollContent} showsVerticalScrollIndicator={false}>
@@ -196,7 +229,7 @@ export default function NewActionScreen({ navigation }: { navigation: NativeStac
           {saving ? <ActivityIndicator size="small" color="#FFF" /> : (
             <>
               <Check size={18} color="#FFF" strokeWidth={2.5} />
-              <Text style={S.saveText}>Save Action</Text>
+              <Text style={S.saveText}>{editMode ? 'Update' : 'Save Action'}</Text>
             </>
           )}
         </Pressable>

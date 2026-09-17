@@ -1,10 +1,11 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { View, Text, ScrollView, Pressable, StyleSheet, TextInput as RNTextInput, Image, ActivityIndicator } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import * as ImagePicker from 'expo-image-picker';
-import { ChevronRight, Check, Camera } from '@/lib/icons';
+import { ChevronLeft, Check, Camera } from '@/lib/icons';
 import { C } from '@/theme/colors';
 import { supabase } from '@/lib/supabase';
+import { useHSEStore } from '@/lib/store';
 import { useHapticFeedback } from '@/lib/haptics';
 import { Toast } from '@/components/Toast';
 import { uploadImage } from '@/lib/uploadImage';
@@ -14,7 +15,9 @@ import type { RootStackParamList } from '@/navigation/AppNavigation';
 const ASSET_TYPES = ['Truck', 'Crane', 'Pump', 'Rig', 'Generator', 'Vehicle'];
 const STATUSES = ['Active', 'In Maintenance', 'Retired'];
 
-export default function NewAssetScreen({ navigation }: { navigation: NativeStackNavigationProp<RootStackParamList> }) {
+export default function NewAssetScreen({ navigation, route }: { navigation: NativeStackNavigationProp<RootStackParamList>; route: any }) {
+  const editMode = route.params?.mode === 'edit';
+  const editAssetId: string | undefined = route.params?.assetId;
   const [assetCode, setAssetCode] = useState('');
   const [name, setName] = useState('');
   const [type, setType] = useState<string | null>(null);
@@ -22,9 +25,29 @@ export default function NewAssetScreen({ navigation }: { navigation: NativeStack
   const [status, setStatus] = useState<string | null>(null);
   const [imageUri, setImageUri] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
+  const [loadingEdit, setLoadingEdit] = useState(false);
   const [toast, setToast] = useState({ visible: false, msg: '', type: 'success' as 'success' | 'error' });
   const [errors, setErrors] = useState<Record<string, string>>({});
   const haptics = useHapticFeedback();
+
+  useEffect(() => {
+    if (editMode && editAssetId) {
+      setLoadingEdit(true);
+      supabase.from('assets').select('*').eq('id', editAssetId).maybeSingle().then(({ data }) => {
+        if (data) {
+          setAssetCode(data.asset_code ?? '');
+          setName(data.name ?? '');
+          setType(data.type ?? null);
+          setLocation(data.location ?? '');
+          const rawStatus = data.status ?? 'active';
+          const displayStatus = rawStatus === 'in_maintenance' ? 'In Maintenance' : rawStatus === 'retired' ? 'Retired' : 'Active';
+          setStatus(displayStatus);
+          setImageUri(data.image_url ?? null);
+        }
+        setLoadingEdit(false);
+      });
+    }
+  }, [editMode, editAssetId]);
 
   const validate = () => {
     const e: Record<string, string> = {};
@@ -43,7 +66,7 @@ export default function NewAssetScreen({ navigation }: { navigation: NativeStack
         setToast({ visible: true, msg: 'Permission required to access photos', type: 'error' });
         return;
       }
-      const result = await ImagePicker.launchImageLibraryAsync({ mediaTypes: ['images'], quality: 0.8 });
+      const result = await ImagePicker.launchImageLibraryAsync({ mediaTypes: ImagePicker.MediaTypeOptions.Images, quality: 0.8 });
       if (!result.cancelled && result.uri) {
         setImageUri(result.uri);
       }
@@ -86,19 +109,35 @@ export default function NewAssetScreen({ navigation }: { navigation: NativeStack
     };
 
     try {
-      const { data, error } = await supabase.from('assets').insert(payload).select().single();
-      setSaving(false);
-      if (error) {
-        console.error('[NewAsset] Insert error:', error);
-        haptics.notificationError();
-        setToast({ visible: true, msg: `Failed: ${error.message}`, type: 'error' });
-        return;
+      if (editMode && editAssetId) {
+        const { error } = await supabase.from('assets').update(payload).eq('id', editAssetId);
+        setSaving(false);
+        if (error) {
+          haptics.notificationError();
+          setToast({ visible: true, msg: `Failed: ${error.message}`, type: 'error' });
+          return;
+        }
+        await useHSEStore.getState().loadAssets();
+        haptics.notificationSuccess();
+        navigation.replace('AssetDetail', { assetId: editAssetId });
+      } else {
+        const { data, error } = await supabase.from('assets').insert(payload).select().single();
+        setSaving(false);
+        if (error) {
+          haptics.notificationError();
+          setToast({ visible: true, msg: `Failed: ${error.message}`, type: 'error' });
+          return;
+        }
+        await useHSEStore.getState().loadAssets();
+        haptics.notificationSuccess();
+        if (data) {
+          navigation.replace('AssetDetail', { assetId: data.id });
+        } else {
+          navigation.goBack();
+        }
       }
-      haptics.notificationSuccess();
-      setToast({ visible: true, msg: 'Asset saved', type: 'success' });
-      setTimeout(() => navigation.goBack(), 500);
     } catch (err) {
-      console.error('[NewAsset] Insert exception:', err);
+      console.error('[NewAsset] Save exception:', err);
       setSaving(false);
       haptics.notificationError();
       setToast({ visible: true, msg: 'Failed to save asset', type: 'error' });
@@ -109,10 +148,10 @@ export default function NewAssetScreen({ navigation }: { navigation: NativeStack
     <SafeAreaView style={S.screen} edges={['top']}>
       <View style={S.header}>
         <Pressable onPress={() => { haptics.impactMedium(); navigation.goBack(); }} style={S.backBtn}>
-          <ChevronRight size={22} color={C.ink} />
+          <ChevronLeft size={20} color={C.ink} />
           <Text style={S.backText}>Back</Text>
         </Pressable>
-        <Text style={S.headerTitle}>New Asset</Text>
+        <Text style={S.headerTitle}>{editMode ? 'Edit Asset' : 'New Asset'}</Text>
         <View style={{ width: 70 }} />
       </View>
       <ScrollView style={S.scroll} contentContainerStyle={S.scrollContent} showsVerticalScrollIndicator={false}>
@@ -154,7 +193,7 @@ export default function NewAssetScreen({ navigation }: { navigation: NativeStack
           {saving ? <ActivityIndicator size="small" color="#FFF" /> : (
             <>
               <Check size={18} color="#FFF" strokeWidth={2.5} />
-              <Text style={S.saveText}>Save Asset</Text>
+              <Text style={S.saveText}>{editMode ? 'Update' : 'Save Asset'}</Text>
             </>
           )}
         </Pressable>
