@@ -5,6 +5,7 @@ import * as ImagePicker from 'expo-image-picker';
 import { Camera, Check, X } from '@/lib/icons';
 import { Dark } from '@/theme/colors';
 import { useHSEStore } from '@/lib/store';
+import { uploadImage } from '@/lib/uploadImage';
 import { useHapticFeedback } from '@/lib/haptics';
 import { Button, TextInput } from '@/components/ui';
 import { Header } from '@/components/Header';
@@ -26,7 +27,7 @@ export default function SafeReportScreen({ navigation }: { navigation: NativeSta
       return;
     }
     const result = await ImagePicker.launchImageLibraryAsync({
-      mediaTypes: ['images'],
+      mediaTypes: ['images'] as any,
       quality: 0.8,
     });
     if (!result.canceled && result.assets[0]) {
@@ -42,10 +43,14 @@ export default function SafeReportScreen({ navigation }: { navigation: NativeSta
       return;
     }
     setSubmitting(true);
+    let imageUrl: string | null = null;
+    if (imageUri) {
+      imageUrl = await uploadImage(imageUri, 'reports');
+    }
     const result = await submitReport({
       type: 'safe',
       note: note.trim(),
-      image_url: imageUri,
+      image_url: imageUrl,
       status: 'closed',
     });
     setSubmitting(false);

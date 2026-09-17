@@ -8,6 +8,7 @@ import { Dark } from '@/theme/colors';
 import { DEPARTMENTS, DEPARTMENT_KEYS } from '@/lib/types';
 import type { ReportType, ReportStatus } from '@/lib/types';
 import { useHSEStore } from '@/lib/store';
+import { uploadImage } from '@/lib/uploadImage';
 import { useHapticFeedback } from '@/lib/haptics';
 import { Button, Chip, TextInput } from '@/components/ui';
 import { Header } from '@/components/Header';
@@ -62,7 +63,7 @@ export default function UnsafeReportScreen({ navigation }: { navigation: NativeS
       Alert.alert('تنبيه', 'يلزم إذن الوصول للصور');
       return;
     }
-    const result = await ImagePicker.launchImageLibraryAsync({ mediaTypes: ['images'], quality: 0.8 });
+    const result = await ImagePicker.launchImageLibraryAsync({ mediaTypes: ['images'] as any, quality: 0.8 });
     if (!result.canceled && result.assets[0]) {
       setImageUri(result.assets[0].uri);
       haptics.notificationSuccess();
@@ -98,11 +99,15 @@ export default function UnsafeReportScreen({ navigation }: { navigation: NativeS
       return;
     }
     setSubmitting(true);
+    let imageUrl: string | null = null;
+    if (imageUri) {
+      imageUrl = await uploadImage(imageUri, 'reports');
+    }
     const result = await submitReport({
       type: classification,
       note: note.trim(),
       corrective_action: correctiveAction.trim() || null,
-      image_url: imageUri,
+      image_url: imageUrl,
       department,
       subcategory,
       status,
