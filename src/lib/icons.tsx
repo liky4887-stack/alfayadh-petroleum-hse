@@ -105,3 +105,8 @@ export const CircleCheck = I('checkmark-circle-outline');
 
 // Type alias — used in AppNavigation.tsx
 export type LucideIcon = React.ComponentType<IconProps>;
+
+// Restore / archive / audit icons
+export const RefreshCw = I('refresh-outline');
+export const RotateCcw = I('refresh-outline');
+export const Archive = I('archive-outline');

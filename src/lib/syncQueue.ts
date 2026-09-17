@@ -57,9 +57,19 @@ export async function flushQueue(): Promise<{ succeeded: number; failed: number 
       if (error) { failed++; op.retries++; remaining.push(op); }
       else succeeded++;
     } else if (op.operation === 'delete' && op.matchKey) {
-      const { error } = await (query as any).delete().eq('id', op.matchKey);
-      if (error) { failed++; op.retries++; remaining.push(op); }
-      else succeeded++;
+      // Soft delete for tracked tables — never hard-delete
+      const softTables = ['actions', 'assets', 'hse_reports', 'training_courses', 'employees'];
+      if (softTables.includes(op.table)) {
+        const { error } = await (query as any)
+          .update({ deleted_at: new Date().toISOString() })
+          .eq('id', op.matchKey);
+        if (error) { failed++; op.retries++; remaining.push(op); }
+        else succeeded++;
+      } else {
+        const { error } = await (query as any).delete().eq('id', op.matchKey);
+        if (error) { failed++; op.retries++; remaining.push(op); }
+        else succeeded++;
+      }
     }
   }
 
