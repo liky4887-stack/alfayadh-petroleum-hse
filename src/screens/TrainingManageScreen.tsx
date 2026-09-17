@@ -62,8 +62,7 @@ export default function TrainingManageScreen({ navigation }: { navigation: Nativ
 
     const totalEnrollments = enrollmentsData?.length ?? 0;
     const completed = enrollmentsData?.filter((e: any) => e.status === 'completed').length ?? 0;
-    setStats({ totalCourses: courseList.length, totalEnrollments,
-      completionRate: totalEnrollments > 0 ? Math.round((completed / totalEnrollments) * 100) : 0 });
+    setStats({ totalCourses: courseList.length, totalEnrollments, completionRate: totalEnrollments > 0 ? Math.round((completed / totalEnrollments) * 100) : 0 });
     setLoading(false);
   }, []);
 
@@ -75,7 +74,10 @@ export default function TrainingManageScreen({ navigation }: { navigation: Nativ
     (e.department ?? '').toLowerCase().includes(search.toLowerCase())
   );
 
-  const toggleEmployee = (id: string) => { haptics.selection(); setEmployees((prev) => prev.map((e) => (e.id === id ? { ...e, selected: !e.selected } : e))); };
+  const toggleEmployee = (id: string) => {
+    haptics.selection();
+    setEmployees((prev) => prev.map((e) => (e.id === id ? { ...e, selected: !e.selected } : e)));
+  };
 
   const handleAssign = async (courseId: string) => {
     haptics.impactMedium();
@@ -84,9 +86,12 @@ export default function TrainingManageScreen({ navigation }: { navigation: Nativ
     setAssigning(true);
     const rows = selectedIds.map((empId) => ({ course_id: courseId, employee_id: empId, status: 'assigned' }));
     await supabase.from('enrollments').insert(rows);
-    setAssigning(false); setCoursePickerVisible(false); setAssignMode(false);
+    setAssigning(false);
+    setCoursePickerVisible(false);
+    setAssignMode(false);
     setEmployees((prev) => prev.map((e) => ({ ...e, selected: false })));
-    haptics.notificationSuccess(); loadData();
+    haptics.notificationSuccess();
+    loadData();
   };
 
   const renderCourse: ListRenderItem<Course> = ({ item }) => (
@@ -100,14 +105,17 @@ export default function TrainingManageScreen({ navigation }: { navigation: Nativ
     </Pressable>
   );
 
-  if (loading) return (<SafeAreaView style={S.screen} edges={['top']}><View style={S.loadingWrap}><ActivityIndicator size="large" color={C.accent} /></View></SafeAreaView>);
+  if (loading) {
+    return (<SafeAreaView style={S.screen} edges={['top']}><View style={S.loadingWrap}><ActivityIndicator size="large" color={C.accent} /></View></SafeAreaView>);
+  }
 
   return (
     <SafeAreaView style={S.screen} edges={['top']}>
       <View style={S.header}>
         <Text style={S.headerTitle}>Manage Training</Text>
         <Pressable onPress={() => { haptics.impactMedium(); navigation.navigate('NewCourse'); }} style={({ pressed }) => [S.addBtn, pressed && S.pressed]}>
-          <Plus size={18} color="#FFF" strokeWidth={2.5} /><Text style={S.addBtnText}>Add Course</Text>
+          <Plus size={18} color="#FFF" strokeWidth={2.5} />
+          <Text style={S.addBtnText}>Add Course</Text>
         </Pressable>
       </View>
       <View style={S.statsRow}>
@@ -117,11 +125,8 @@ export default function TrainingManageScreen({ navigation }: { navigation: Nativ
       </View>
       {!assignMode ? (
         <FlatList data={courses} keyExtractor={(item) => item.id} renderItem={renderCourse} contentContainerStyle={S.listContent}
-          ListHeaderComponent={<View style={S.sectionHeader}><Text style={S.sectionTitle}>Courses</Text>
-            <Pressable onPress={() => { haptics.impactMedium(); setAssignMode(true); }} style={({ pressed }) => [S.assignToggle, pressed && S.pressed]}>
-              <Users size={15} color={C.accent} strokeWidth={2} /><Text style={S.assignToggleText}>Assign</Text></Pressable></View>}
-          ListEmptyComponent={<View style={S.emptyState}><BookOpen size={40} color={C.faint} strokeWidth={1.5} />
-            <Text style={S.emptyTitle}>No courses yet</Text><Text style={S.emptyText}>Tap "Add Course" to create your first training course.</Text></View>}
+          ListHeaderComponent={<View style={S.sectionHeader}><Text style={S.sectionTitle}>Courses</Text><Pressable onPress={() => { haptics.impactMedium(); setAssignMode(true); }} style={({ pressed }) => [S.assignToggle, pressed && S.pressed]}><Users size={15} color={C.accent} strokeWidth={2} /><Text style={S.assignToggleText}>Assign</Text></Pressable></View>}
+          ListEmptyComponent={<View style={S.emptyState}><BookOpen size={40} color={C.faint} strokeWidth={1.5} /><Text style={S.emptyTitle}>No courses yet</Text><Text style={S.emptyText}>Tap "Add Course" to create your first training course.</Text></View>}
         />
       ) : (
         <View style={S.assignSection}>
@@ -129,32 +134,21 @@ export default function TrainingManageScreen({ navigation }: { navigation: Nativ
             <Pressable onPress={() => { haptics.impactMedium(); setAssignMode(false); }} style={({ pressed }) => [S.backBtn, pressed && S.pressed]}><Text style={S.backText}>Back</Text></Pressable>
             <Text style={S.assignTitle}>Assign Employees</Text><View style={{ width: 50 }} />
           </View>
-          <View style={S.searchWrap}><Search size={18} color={C.faint} strokeWidth={2} />
-            <RNTextInput value={search} onChangeText={setSearch} placeholder="Search employees..." placeholderTextColor={C.faint} style={S.searchInput} /></View>
-          <FlatList data={filteredEmployees} keyExtractor={(item) => item.id}
-            renderItem={({ item }) => (
-              <Pressable onPress={() => toggleEmployee(item.id)} style={({ pressed }) => [S.empRow, pressed && S.pressed]}>
-                <View style={[S.checkbox, item.selected && S.checkboxSelected]}>{item.selected && <Text style={S.checkmark}>✓</Text>}</View>
-                <View style={S.empInfo}><Text style={S.empName}>{item.full_name}</Text>
-                  <Text style={S.empMeta}>{item.job_title ?? '—'}{item.department ? ` · ${item.department}` : ''}</Text></View>
-              </Pressable>)}
-            contentContainerStyle={S.empList}
-            ListEmptyComponent={<View style={S.emptyState}><Users size={36} color={C.faint} strokeWidth={1.5} /><Text style={S.emptyText}>No employees found. Add employees in the database first.</Text></View>}
-          />
+          <View style={S.searchWrap}><Search size={18} color={C.faint} strokeWidth={2} /><RNTextInput value={search} onChangeText={setSearch} placeholder="Search employees..." placeholderTextColor={C.faint} style={S.searchInput} /></View>
+          <FlatList data={filteredEmployees} keyExtractor={(item) => item.id} renderItem={({ item }) => (
+            <Pressable onPress={() => toggleEmployee(item.id)} style={({ pressed }) => [S.empRow, pressed && S.pressed]}>
+              <View style={[S.checkbox, item.selected && S.checkboxSelected]}>{item.selected && <Text style={S.checkmark}>✓</Text>}</View>
+              <View style={S.empInfo}><Text style={S.empName}>{item.full_name}</Text><Text style={S.empMeta}>{item.job_title ?? '—'}{item.department ? ` · ${item.department}` : ''}</Text></View>
+            </Pressable>
+          )} contentContainerStyle={S.empList} ListEmptyComponent={<View style={S.emptyState}><Users size={36} color={C.faint} strokeWidth={1.5} /><Text style={S.emptyText}>No employees found. Add employees in the database first.</Text></View>} />
           {employees.filter((e) => e.selected).length > 0 && (
-            <Pressable onPress={() => { haptics.impactMedium(); setCoursePickerVisible(true); }} style={({ pressed }) => [S.assignBtn, pressed && S.pressed]}>
-              <Text style={S.assignBtnText}>Assign {employees.filter((e) => e.selected).length} to course</Text>
-            </Pressable>)}
+            <Pressable onPress={() => { haptics.impactMedium(); setCoursePickerVisible(true); }} style={({ pressed }) => [S.assignBtn, pressed && S.pressed]}><Text style={S.assignBtnText}>Assign {employees.filter((e) => e.selected).length} to course</Text></Pressable>
+          )}
           {coursePickerVisible && (
-            <View style={S.pickerOverlay}><View style={S.pickerCard}><Text style={S.pickerTitle}>Select Course</Text>
-              <FlatList data={courses} keyExtractor={(item) => item.id}
-                renderItem={({ item }) => (
-                  <Pressable onPress={() => assigning ? null : handleAssign(item.id)} style={({ pressed }) => [S.pickerRow, pressed && S.pressed]} disabled={assigning}>
-                    <Text style={S.pickerRowText}>{item.title}</Text><ChevronRight size={16} color={C.faint} />
-                  </Pressable>)} style={{ maxHeight: 300 }} />
-              <Pressable onPress={() => setCoursePickerVisible(false)} style={({ pressed }) => [S.pickerCancel, pressed && S.pressed]}><Text style={S.pickerCancelText}>Cancel</Text></Pressable>
-            </View></View>)}
-        </View>)}
+            <View style={S.pickerOverlay}><View style={S.pickerCard}><Text style={S.pickerTitle}>Select Course</Text><FlatList data={courses} keyExtractor={(item) => item.id} renderItem={({ item }) => (<Pressable onPress={() => assigning ? null : handleAssign(item.id)} style={({ pressed }) => [S.pickerRow, pressed && S.pressed]} disabled={assigning}><Text style={S.pickerRowText}>{item.title}</Text><ChevronRight size={16} color={C.faint} /></Pressable>)} style={{ maxHeight: 300 }} /><Pressable onPress={() => setCoursePickerVisible(false)} style={({ pressed }) => [S.pickerCancel, pressed && S.pressed]}><Text style={S.pickerCancelText}>Cancel</Text></Pressable></View></View>
+          )}
+        </View>
+      )}
     </SafeAreaView>
   );
 }

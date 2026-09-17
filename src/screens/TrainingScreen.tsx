@@ -33,9 +33,7 @@ export default function TrainingScreen({ navigation }: { navigation: any }) {
               <Text style={S.progressTitle} numberOfLines={1}>Field safety essentials</Text>
               <Text style={S.progressPct}>68%</Text>
             </View>
-            <View style={S.progressTrack}>
-              <View style={S.progressFill} />
-            </View>
+            <View style={S.progressTrack}><View style={S.progressFill} /></View>
             <Text style={S.progressMeta}>8 of 12 lessons completed</Text>
           </View>
         </View>
