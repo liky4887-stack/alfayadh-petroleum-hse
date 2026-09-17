@@ -103,5 +103,5 @@ export const Share2 = I('share-outline');
 export const Circle = I('ellipse-outline');
 export const CircleCheck = I('checkmark-circle-outline');
 
-// Type alias — used as a type in AppNavigation.tsx
+// Type alias — used in AppNavigation.tsx
 export type LucideIcon = React.ComponentType<IconProps>;
