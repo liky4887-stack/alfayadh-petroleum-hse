@@ -133,16 +133,19 @@ export default function HomeScreen({ navigation }: { navigation: NativeStackNavi
 
   return (
     <SafeAreaView style={S.screen} edges={['top']}>
+      <BrandHeader
+        title="Home"
+        onLogoLongPress={handleLogoLongPress}
+        right={
+          <View style={S.headerRight}>
+            {deptPill}
+            <IconButton icon={<Bell size={22} color={C.inkSecondary} strokeWidth={1.8} />} onPress={() => { haptics.impactMedium(); navigation.navigate('Feed'); }} />
+          </View>
+        }
+      />
       <ScrollView style={S.scroll} contentContainerStyle={S.scrollContent} showsVerticalScrollIndicator={false}>
-        <BrandHeader
-          title="Home"
-          onLogoLongPress={handleLogoLongPress}
-          right={
-            <View style={S.headerRight}>
-              {deptPill}
-              <IconButton icon={<Bell size={22} color={C.inkSecondary} strokeWidth={1.8} />} onPress={() => { haptics.impactMedium(); navigation.navigate('Feed'); }} />
-            </View>
-          }
+        <PromoCarousel
+          onPressCard={() => { haptics.impactMedium(); navigation.navigate('Feed'); }}
         />
         <View style={S.body}>
           {loading ? (
@@ -198,9 +201,6 @@ function SafetyDashboard({ t, haptics, navigation, activeActions, activeAssets, 
         <OutlinedPillBtn label="+ New Action" color="#0EA5E9" onPress={() => { haptics.impactMedium(); navigation.navigate('NewAction'); }} />
       </View>
 
-      <PromoCarousel
-        onPressCard={() => { haptics.impactMedium(); navigation.navigate('Feed'); }}
-      />
       <View style={S.kpiRow}>
         <KpiCard value={String(activeAssets)} label="Active Assets" onPress={() => { haptics.impactMedium(); navigation.navigate('Assets'); }} />
         <KpiCard value={String(activeActions.length)} label="Active Actions" onPress={() => { haptics.impactMedium(); navigation.navigate('Actions'); }} />
