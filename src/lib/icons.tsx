@@ -87,3 +87,9 @@ export const CircleCheck = I('checkmark-circle-outline');
 export const Link2 = I('link-outline');
 export const TrendingUp = I('trending-up-outline');
 export const Users = I('people-outline');
+
+// --- Department dashboard icons ---
+export const Activity = I('pulse-outline');
+export const Globe = I('globe-outline');
+export const Truck = M('truck-outline');
+export const Wrench = M('wrench-outline');
