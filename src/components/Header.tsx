@@ -1,6 +1,5 @@
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { ArrowLeft, BarChart3 } from '@/lib/icons';
-import { Dark } from '@/theme/colors';
 import { useHSEStore } from '@/lib/store';
 import { useHapticFeedback } from '@/lib/haptics';
 import { useSyncStatus } from '@/lib/network';
@@ -38,7 +37,7 @@ export function Header({ title, currentScreen, navigation, showBack, isAdmin }: 
               hitSlop={12}
               style={({ pressed }) => [S.backBtn, pressed && S.pressed]}
             >
-              <ArrowLeft size={20} color={Dark.steel} />
+              <ArrowLeft size={20} color="#0F172A" />
               <Text style={S.backText}>Back</Text>
             </Pressable>
           ) : currentScreen === 'Dashboard' ? (
@@ -47,7 +46,7 @@ export function Header({ title, currentScreen, navigation, showBack, isAdmin }: 
               hitSlop={12}
               style={({ pressed }) => [S.backBtn, pressed && S.pressed]}
             >
-              <BarChart3 size={18} color={Dark.steel} />
+              <BarChart3 size={18} color="#0F172A" />
               <Text style={S.adminText}>Admin</Text>
             </Pressable>
           ) : null}
@@ -89,9 +88,9 @@ export function Header({ title, currentScreen, navigation, showBack, isAdmin }: 
 
 const S = StyleSheet.create({
   container: {
-    backgroundColor: Dark.slate,
+    backgroundColor: '#FFFFFF',
     borderBottomWidth: 1,
-    borderBottomColor: Dark.graphite,
+    borderBottomColor: '#E5E7EB',
     paddingTop: 16,
     paddingBottom: 14,
     paddingHorizontal: 20,
@@ -104,37 +103,37 @@ const S = StyleSheet.create({
   },
   left: { flexDirection: 'row', alignItems: 'center', gap: 8, minWidth: 100 },
   backBtn: { flexDirection: 'row', alignItems: 'center', gap: 4 },
-  backText: { color: Dark.steel, fontSize: 14 },
-  adminText: { color: Dark.steel, fontSize: 13, fontWeight: '600' },
-  title: { fontWeight: '800', fontSize: 20, color: Dark.offWhite, letterSpacing: 2, flex: 1, textAlign: 'center', marginEnd: 8 },
+  backText: { color: '#0F172A', fontSize: 14, fontWeight: '600' },
+  adminText: { color: '#0F172A', fontSize: 13, fontWeight: '600' },
+  title: { fontWeight: '800', fontSize: 20, color: '#0F172A', letterSpacing: 2, flex: 1, textAlign: 'center', marginEnd: 8 },
   right: { flexDirection: 'row', alignItems: 'center', gap: 8, minWidth: 100, justifyContent: 'flex-end' },
-  onlineDot: { width: 8, height: 8, borderRadius: 4, backgroundColor: Dark.green },
+  onlineDot: { width: 8, height: 8, borderRadius: 4, backgroundColor: '#16A34A' },
   offlinePill: {
     paddingVertical: 4,
     paddingHorizontal: 10,
     borderRadius: 20,
     borderWidth: 1,
-    borderColor: `${Dark.red}44`,
-    backgroundColor: Dark.redBg,
+    borderColor: '#DC262644',
+    backgroundColor: '#FCE8E6',
   },
-  offlineText: { color: Dark.red, fontSize: 11, fontWeight: '600' },
+  offlineText: { color: '#DC2626', fontSize: 11, fontWeight: '600' },
   pendingPill: {
     paddingVertical: 4,
     paddingHorizontal: 10,
     borderRadius: 20,
     borderWidth: 1,
-    borderColor: `${Dark.emerald}44`,
-    backgroundColor: Dark.emeraldBg,
+    borderColor: '#0EA5E944',
+    backgroundColor: '#E0F2FE',
   },
-  pendingText: { color: Dark.emerald, fontSize: 11, fontWeight: '600' },
+  pendingText: { color: '#0EA5E9', fontSize: 11, fontWeight: '600' },
   syncPill: {
     paddingVertical: 4,
     paddingHorizontal: 10,
     borderRadius: 20,
     borderWidth: 1,
-    borderColor: '#3399FF44',
-    backgroundColor: 'rgba(51,153,255,0.13)',
+    borderColor: '#0EA5E944',
+    backgroundColor: '#E0F2FE',
   },
-  syncText: { color: '#3399FF', fontSize: 11, fontWeight: '600' },
+  syncText: { color: '#0EA5E9', fontSize: 11, fontWeight: '600' },
   pressed: { opacity: 0.7 },
 });
