@@ -107,27 +107,27 @@ export default function HomeScreen({ navigation }: { navigation: NativeStackNavi
   const deptPill = (
     <Pressable
       onPress={() => { haptics.impactMedium(); setShowDeptModal(true); }}
-      style={({ pressed }) => [S.deptPill, pressed && S.pressed]}
+      style={({ pressed }) => [s.deptPill, pressed && s.pressed]}
     >
-      <Text style={S.deptPillText} numberOfLines={1} ellipsizeMode="tail">{DEPT_SHORT[department]}</Text>
+      <Text style={s.deptPillText} numberOfLines={1} ellipsizeMode="tail">{DEPT_SHORT[department]}</Text>
     </Pressable>
   );
 
   return (
-    <SafeAreaView style={S.screen} edges={['top']}>
-      <ScrollView style={S.scroll} contentContainerStyle={S.scrollContent} showsVerticalScrollIndicator={false}>
+    <SafeAreaView style={s.screen} edges={['top']}>
+      <ScrollView style={s.scroll} contentContainerStyle={s.scrollContent} showsVerticalScrollIndicator={false}>
         <BrandHeader
           title="Home"
           right={
-            <View style={S.headerRight}>
+            <View style={s.headerRight}>
               {deptPill}
               <IconButton icon={<Bell size={22} color={C.inkSecondary} strokeWidth={1.8} />} onPress={() => { haptics.impactMedium(); navigation.navigate('Feed'); }} />
             </View>
           }
         />
-        <View style={S.body}>
+        <View style={s.body}>
           {loading ? (
-            <View style={S.loadingWrap}><ActivityIndicator size="large" color={C.accent} /></View>
+            <View style={s.loadingWrap}><ActivityIndicator size="large" color={C.accent} /></View>
           ) : (
             <>
               {department === 'safety' && (
