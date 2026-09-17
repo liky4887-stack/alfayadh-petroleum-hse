@@ -30,8 +30,8 @@ export default function MediaLibraryScreen({ navigation }: { navigation: NativeS
       return;
     }
     const result = await ImagePicker.launchImageLibraryAsync({ mediaTypes: ['images'], quality: 0.8 });
-    if (result.cancelled) return;
-    const newItems: MediaItem[] = [{ id: `img_${Date.now()}`, uri: result.uri }];
+    if (result.canceled) return;
+    const newItems: MediaItem[] = [{ id: `img_${Date.now()}`, uri: result.assets[0].uri }];
     setItems((prev) => [...newItems, ...prev]);
     haptics.notificationSuccess();
     setToast({ visible: true, msg: `${newItems.length} image(s) added` });

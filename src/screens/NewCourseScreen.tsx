@@ -30,8 +30,8 @@ export default function NewCourseScreen({ navigation }: { navigation: NativeStac
       return;
     }
     const result = await ImagePicker.launchImageLibraryAsync({ mediaTypes: ['images'], quality: 0.8 });
-    if (!result.cancelled && result.uri) {
-      setImageUri(result.uri);
+    if (!result.canceled && result.assets?.[0]?.uri) {
+      setImageUri(result.assets[0].uri);
       haptics.notificationSuccess();
     }
   };

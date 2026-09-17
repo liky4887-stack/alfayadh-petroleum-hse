@@ -50,7 +50,7 @@ export default function UnsafeReportScreen({ navigation }: { navigation: NativeS
     const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
     if (status !== 'granted') { Alert.alert('Permission needed', 'Photo access is required to attach images.'); return; }
     const result = await ImagePicker.launchImageLibraryAsync({ mediaTypes: ['images'], quality: 0.8 });
-    if (!result.cancelled && result.uri) { setImageUri(result.uri); haptics.notificationSuccess(); }
+    if (!result.canceled && result.assets?.[0]?.uri) { setImageUri(result.assets[0].uri); haptics.notificationSuccess(); }
   };
 
   const handleDepartment = (dept: string) => { haptics.selection(); setDepartment(dept); setSubcategory(null); };

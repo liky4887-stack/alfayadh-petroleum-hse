@@ -67,8 +67,8 @@ export default function NewAssetScreen({ navigation, route }: { navigation: Nati
         return;
       }
       const result = await ImagePicker.launchImageLibraryAsync({ mediaTypes: ['images'], quality: 0.8 });
-      if (!result.cancelled && result.uri) {
-        setImageUri(result.uri);
+      if (!result.canceled && result.assets?.[0]?.uri) {
+        setImageUri(result.assets[0].uri);
       }
     } catch (err) {
       console.error('Image picker error:', err);
