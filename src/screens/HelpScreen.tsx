@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { View, Text, ScrollView, Pressable, StyleSheet, Linking, TextInput as RNTextInput } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { ChevronRight, ChevronDown, Mail, Phone, Bug, Send, Shield, Info } from '@/lib/icons';
+import { ChevronRight, ChevronDown, Mail, Phone, Bug, Send, Shield, Info } from 'lucide-react';
 import { C } from '@/theme/colors';
 import { useHapticFeedback } from '@/lib/haptics';
 import { Toast } from '@/components/Toast';
@@ -57,7 +57,7 @@ export default function HelpScreen({ navigation }: { navigation: NativeStackNavi
                 style={({ pressed }) => [S.faqHeader, pressed && S.btnPressed]}
               >
                 <Text style={S.faqQ}>{faq.q}</Text>
-                <ChevronDown size={18} color={C.mutedLight} strokeWidth={2} style={{ transform: [{ rotate: openFaq === i ? '180deg' : '0deg' }] }} />
+                <ChevronDown size={18} color={C.mutedLight} strokeWidth={2} style={{ transform: [{ rotate: openFaq === i ? '180deg' : '0deg' }] } as any} />
               </Pressable>
               {openFaq === i && <Text style={S.faqA}>{faq.a}</Text>}
             </View>
