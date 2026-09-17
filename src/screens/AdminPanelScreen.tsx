@@ -6,7 +6,8 @@ import { theme } from '@/theme/theme';
 import { useHapticFeedback } from '@/lib/haptics';
 import { useConfirm } from '@/components/ConfirmDialog';
 import { Toast } from '@/components/Toast';
-import { ChevronLeft, Trash2, Pencil, CircleCheck, LogOut } from '@/lib/icons';
+import { ChevronLeft, Trash2, Pencil, CircleCheck, LogOut, Share2 } from '@/lib/icons';
+import { exportHSEReport } from '@/lib/pdfReport';
 import { useT } from '@/lib/i18n';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
@@ -40,6 +41,27 @@ export default function AdminPanelScreen({ navigation }: { navigation: any }) {
   const [loading, setLoading] = useState(true);
   const [toast, setToast] = useState({ visible: false, msg: '', type: 'success' as 'success' | 'error' });
   const [roleModal, setRoleModal] = useState<{ userId: string; currentRole: string } | null>(null);
+  const [exporting, setExporting] = useState(false);
+
+  const handleExport = async () => {
+    if (exporting) return;
+    setExporting(true);
+    haptics.impactMedium();
+    try {
+      const uri = await exportHSEReport();
+      if (uri) {
+        haptics.notificationSuccess();
+        showToast('PDF exported');
+      } else {
+        haptics.notificationError();
+        showToast('Export failed', 'error');
+      }
+    } catch (err) {
+      console.error('Export exception:', err);
+      showToast('Export failed', 'error');
+    }
+    setExporting(false);
+  };
   const { confirm, dialog } = useConfirm();
 
   const loadTab = useCallback(async (tab: TabKey) => {
@@ -139,9 +161,14 @@ export default function AdminPanelScreen({ navigation }: { navigation: any }) {
           <Text style={S.backText}>{t('cancel')}</Text>
         </Pressable>
         <Text style={S.headerTitle}>{t('adminPanel')}</Text>
-        <Pressable onPress={handleLogout} style={({ pressed }) => [S.logoutBtn, pressed && S.pressed]}>
-          <LogOut size={18} color={theme.danger} strokeWidth={2} />
-        </Pressable>
+        <View style={{ flexDirection: 'row', gap: 8 }}>
+          <Pressable onPress={handleExport} disabled={exporting} style={({ pressed }) => [S.logoutBtn, pressed && S.pressed, exporting && { opacity: 0.5 }]}>
+            {exporting ? <ActivityIndicator size="small" color={theme.primary} /> : <Share2 size={18} color={theme.primary} strokeWidth={2} />}
+          </Pressable>
+          <Pressable onPress={handleLogout} style={({ pressed }) => [S.logoutBtn, pressed && S.pressed]}>
+            <LogOut size={18} color={theme.danger} strokeWidth={2} />
+          </Pressable>
+        </View>
       </View>
       <View style={S.tabRow}>
         {TABS.map((tab) => (

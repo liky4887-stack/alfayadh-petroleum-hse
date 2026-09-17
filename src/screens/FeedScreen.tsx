@@ -5,12 +5,39 @@ import { X, Check, CheckCircle2, Eye, Play, Send } from '@/lib/icons';
 import { C, IMG } from '@/theme/colors';
 import { IconButton, Avatar } from '@/components/Shared';
 import { useHapticFeedback } from '@/lib/haptics';
+import { supabase } from '@/lib/supabase';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import type { RootStackParamList } from '@/navigation/AppNavigation';
 
 export default function FeedScreen({ navigation }: { navigation: NativeStackNavigationProp<RootStackParamList> }) {
   const [comment, setComment] = useState('');
   const [acknowledged, setAcknowledged] = useState(false);
+  const [comments, setComments] = useState([
+    { initials: 'LH', color: '#D5F7FF', text: 'Thanks for this reminder. On it.' },
+    { initials: 'AG', color: '#D9FBEF', text: 'Is there any difference between this truck model and the rest of the fleet?' },
+  ]);
+  const [sending, setSending] = useState(false);
+
+  const handleSendComment = async () => {
+    const text = comment.trim();
+    if (!text || sending) return;
+    setSending(true);
+    haptics.impactMedium();
+    try {
+      const { error } = await supabase.from('feed_comments').insert({
+        feed_id: 'demo-feed-1',
+        user_name: 'Me',
+        comment: text,
+      });
+      if (error) console.error('[COMMENT] Insert failed:', error);
+    } catch (err) {
+      console.error('[COMMENT] Send exception:', err);
+    }
+    setComments((prev) => [...prev, { initials: 'MM', color: '#D3CCFF', text }]);
+    setComment('');
+    haptics.notificationSuccess();
+    setSending(false);
+  };
   const haptics = useHapticFeedback();
 
   return (
@@ -52,8 +79,9 @@ export default function FeedScreen({ navigation }: { navigation: NativeStackNavi
         </View>
         <Text style={S.feedDescription}>Please watch this reminder video on fuel line maintenance changes.</Text>
         <View style={S.commentsSection}>
-          <CommentBubble initials="LH" color="#D5F7FF" text="Thanks for this reminder. On it." />
-          <CommentBubble initials="AG" color="#D9FBEF" text="Is there any difference between this truck model and the rest of the fleet?" />
+          {comments.map((cm, i) => (
+            <CommentBubble key={`${i}-${cm.initials}`} initials={cm.initials} color={cm.color} text={cm.text} />
+          ))}
         </View>
       </ScrollView>
       <View style={S.commentBar}>

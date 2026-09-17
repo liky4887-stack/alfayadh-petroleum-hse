@@ -126,6 +126,7 @@ const S = StyleSheet.create({
     justifyContent: 'space-between',
   },
   headerLeft: { width: 60, alignItems: 'flex-start', paddingLeft: 20 },
+  onlineDot: { width: 12, height: 12, borderRadius: 6, borderWidth: 2, borderColor: '#FFFFFF', shadowColor: '#000', shadowOpacity: 0.15, shadowRadius: 2, elevation: 2 },
   headerCenter: { flex: 1, alignItems: 'center', marginEnd: 8 },
   headerRight: { flexShrink: 0, maxWidth: 140, alignItems: 'center' },
   brandRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
