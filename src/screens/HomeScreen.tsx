@@ -10,6 +10,7 @@ import { useHSEStore } from '@/lib/store';
 import { useDepartment, DEPARTMENT_META, type Department } from '@/lib/department';
 import { useT } from '@/lib/i18n';
 import { supabase } from '@/lib/supabase';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import type { RootStackParamList } from '@/navigation/AppNavigation';
 
@@ -115,11 +116,26 @@ export default function HomeScreen({ navigation }: { navigation: NativeStackNavi
     </Pressable>
   );
 
+  const handleLogoLongPress = async () => {
+    haptics.notificationWarning();
+    try {
+      const session = await AsyncStorage.getItem('admin_session');
+      if (session === 'true') {
+        navigation.navigate('AdminPanel' as never);
+      } else {
+        navigation.navigate('AdminLogin' as never);
+      }
+    } catch {
+      navigation.navigate('AdminLogin' as never);
+    }
+  };
+
   return (
     <SafeAreaView style={S.screen} edges={['top']}>
       <ScrollView style={S.scroll} contentContainerStyle={S.scrollContent} showsVerticalScrollIndicator={false}>
         <BrandHeader
           title="Home"
+          onLogoLongPress={handleLogoLongPress}
           right={
             <View style={S.headerRight}>
               {deptPill}
