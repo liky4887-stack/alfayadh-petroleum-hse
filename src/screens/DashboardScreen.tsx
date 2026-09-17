@@ -1,7 +1,7 @@
 import { useEffect, useMemo } from 'react';
 import { Pressable, ScrollView, Text, View, StyleSheet } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { ShieldCheck, AlertTriangle, FileText } from '@/lib/icons';
+import { ShieldCheck, AlertTriangle, FileText } from 'lucide-react';
 import { Dark, formatDate, TYPE_LABELS } from '@/theme/colors';
 import { useHSEStore } from '@/lib/store';
 import { useHapticFeedback } from '@/lib/haptics';
@@ -67,7 +67,10 @@ export default function DashboardScreen({ navigation }: { navigation: NativeStac
             ) : (
               <View style={S.reportList}>
                 {recentReports.map((report, i) => (
-                  <View key={report.id} style={[S.reportRow, i < recentReports.length - 1 && S.reportRowBorder]}>
+                  <View
+                    key={report.id}
+                    style={[S.reportRow, i < recentReports.length - 1 && S.reportRowBorder]}
+                  >
                     <View style={S.reportType}>
                       <Text style={[S.reportTypeText, { color: report.type === 'safe' ? Dark.green : Dark.red }]}>
                         {TYPE_LABELS[report.type] ?? report.type}
@@ -91,8 +94,22 @@ const S = StyleSheet.create({
   screen: { flex: 1, backgroundColor: Dark.obsidian },
   scroll: { flex: 1 },
   body: { padding: 20, gap: 16 },
-  actionBlock: { borderWidth: 1, backgroundColor: Dark.slate, borderRadius: 12, padding: 22, minHeight: 72, flexDirection: 'row', alignItems: 'center', gap: 16 },
-  actionIconWrap: { width: 44, height: 44, borderRadius: 10, borderWidth: 1, borderColor: `${Dark.emerald}55`, backgroundColor: Dark.emeraldBg, alignItems: 'center', justifyContent: 'center' },
+  actionBlock: {
+    borderWidth: 1,
+    backgroundColor: Dark.slate,
+    borderRadius: 12,
+    padding: 22,
+    minHeight: 72,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 16,
+  },
+  actionIconWrap: {
+    width: 44, height: 44, borderRadius: 10,
+    borderWidth: 1, borderColor: `${Dark.emerald}55`,
+    backgroundColor: Dark.emeraldBg,
+    alignItems: 'center', justifyContent: 'center',
+  },
   actionText: { flex: 1 },
   actionTitleGreen: { color: Dark.emerald, fontSize: 18, fontWeight: '800' },
   actionTitleRed: { color: Dark.red, fontSize: 18, fontWeight: '800' },
@@ -104,7 +121,11 @@ const S = StyleSheet.create({
   emptyState: { paddingVertical: 40, alignItems: 'center' },
   emptyText: { color: Dark.steel, fontSize: 14 },
   reportList: { borderWidth: 1, borderColor: Dark.graphite, borderRadius: 10, overflow: 'hidden' },
-  reportRow: { flexDirection: 'row', alignItems: 'center', paddingVertical: 14, paddingHorizontal: 16, backgroundColor: Dark.slate, gap: 12 },
+  reportRow: {
+    flexDirection: 'row', alignItems: 'center',
+    paddingVertical: 14, paddingHorizontal: 16,
+    backgroundColor: Dark.slate, gap: 12,
+  },
   reportRowBorder: { borderBottomWidth: 1, borderBottomColor: Dark.graphite },
   reportType: { minWidth: 90 },
   reportTypeText: { fontSize: 13, fontWeight: '700' },
