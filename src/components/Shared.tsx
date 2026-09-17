@@ -2,8 +2,9 @@ import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { ChevronRight, MoreHorizontal, Filter, Bell, X } from '@/lib/icons';
 import { C } from '@/theme/colors';
 import { useHapticFeedback } from '@/lib/haptics';
-import { useOnline } from '@/lib/network';
+import { useRef } from 'react';
 import type { ReactNode } from 'react';
+import { useOnline } from '@/lib/network';
 
 interface BrandHeaderProps {
   title: string;
@@ -15,23 +16,41 @@ interface BrandHeaderProps {
 export function BrandHeader({ title, right, onBack, onLogoLongPress }: BrandHeaderProps) {
   const haptics = useHapticFeedback();
   const online = useOnline();
+  const tapCount = useRef(0);
+  const tapTimer = useRef(0);
+
   return (
     <View style={S.header}>
       <View style={S.headerLeft}>
         {onBack ? (
           <IconButton icon={<ChevronRight size={26} color={C.ink} />} onPress={onBack} />
-        ) : null}
+        ) : (
+          <View style={[S.onlineDot, { backgroundColor: online ? '#0EA5E9' : '#EF4444' }]} />
+        )}
       </View>
       <View style={S.headerCenter}>
         <Pressable
           onLongPress={onLogoLongPress}
-          delayLongPress={3000}
-          onPressIn={() => haptics.impactMedium()}
-          hitSlop={8}
-          disabled={!onLogoLongPress}
+          delayLongPress={1200}
+          onPress={() => {
+            if (!onLogoLongPress) return;
+            const now = Date.now();
+            if (now - tapTimer.current > 4000) {
+              tapCount.current = 0;
+            }
+            tapCount.current += 1;
+            tapTimer.current = now;
+            haptics.selection();
+            console.log('[LOGO TAP]', tapCount.current);
+            if (tapCount.current >= 3) {
+              tapCount.current = 0;
+              onLogoLongPress();
+            }
+          }}
+          hitSlop={{ top: 20, bottom: 20, left: 40, right: 40 }}
+          style={({ pressed }) => [{ opacity: pressed ? 0.7 : 1, paddingVertical: 4, paddingHorizontal: 8 }]}
         >
           <View style={S.brandRow}>
-            <View style={[S.onlineDot, { backgroundColor: online ? '#0EA5E9' : '#EF4444' }]} />
             <View>
               <Text style={S.brandName} numberOfLines={1}>ALFAYADH</Text>
               <Text style={S.brandSubline}>PETROLEUM · HSE</Text>
@@ -106,11 +125,10 @@ const S = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'space-between',
   },
-  headerLeft: { width: 44, alignItems: 'center' },
+  headerLeft: { width: 60, alignItems: 'flex-start', paddingLeft: 20 },
   headerCenter: { flex: 1, alignItems: 'center', marginEnd: 8 },
   headerRight: { flexShrink: 0, maxWidth: 140, alignItems: 'center' },
   brandRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
-  onlineDot: { width: 8, height: 8, borderRadius: 4 },
   brandName: { fontSize: 20, fontWeight: '800', letterSpacing: 2, color: C.ink, lineHeight: 22 },
   brandSubline: { fontSize: 8, fontWeight: '700', letterSpacing: 1.5, color: C.accent, marginTop: 2 },
   iconBtn: { width: 44, height: 44, alignItems: 'center', justifyContent: 'center', borderRadius: 12 },
