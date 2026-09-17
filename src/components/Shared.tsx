@@ -23,7 +23,7 @@ export function BrandHeader({ title, right, onBack, onLogoLongPress }: BrandHead
       <View style={S.headerCenter}>
         <Pressable
           onLongPress={onLogoLongPress}
-          delayLongPress={3000}
+          delayLongPress={1500}
           onPressIn={() => haptics.impactMedium()}
           hitSlop={8}
           disabled={!onLogoLongPress}

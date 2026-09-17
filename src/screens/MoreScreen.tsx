@@ -1,4 +1,5 @@
 import { View, Text, Pressable, StyleSheet } from 'react-native';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { UserRound, ImageIcon, Menu, ChevronRight, Globe, LogOut } from '@/lib/icons';
 import { C } from '@/theme/colors';
@@ -20,6 +21,20 @@ export default function MoreScreen({ navigation }: { navigation: NativeStackNavi
     try { await supabase.auth.signOut(); } catch { /* ignore */ }
   };
 
+  const handleVersionLongPress = async () => {
+    haptics.notificationWarning();
+    try {
+      const session = await AsyncStorage.getItem('admin_session');
+      if (session === 'true') {
+        navigation.navigate('AdminPanel');
+      } else {
+        navigation.navigate('AdminLogin');
+      }
+    } catch {
+      navigation.navigate('AdminLogin');
+    }
+  };
+
   return (
     <SafeAreaView style={S.screen} edges={['top']}>
       <BrandHeader title={t('more')} />
@@ -28,6 +43,14 @@ export default function MoreScreen({ navigation }: { navigation: NativeStackNavi
           <MoreRow icon={<UserRound size={19} color={C.accent} strokeWidth={1.8} />} label={t('profile')} onPress={() => { haptics.impactMedium(); navigation.navigate('Profile'); }} />
           <MoreRow icon={<ImageIcon size={19} color={C.accent} strokeWidth={1.8} />} label={t('mediaLibrary')} onPress={() => { haptics.impactMedium(); navigation.navigate('MediaLibrary'); }} />
           <MoreRow icon={<Menu size={19} color={C.accent} strokeWidth={1.8} />} label={t('helpSupport')} onPress={() => { haptics.impactMedium(); navigation.navigate('Help'); }} />
+
+          <Pressable
+            onLongPress={handleVersionLongPress}
+            delayLongPress={1500}
+            style={S.versionWrap}
+          >
+            <Text style={S.versionText}>v1.0.0</Text>
+          </Pressable>
         </View>
 
         <Text style={S.sectionTitle}>{t('language')}</Text>
@@ -79,5 +102,7 @@ const S = StyleSheet.create({
   langBtnActive: { backgroundColor: C.accent, borderColor: C.accent },
   langText: { fontSize: 15, fontWeight: '600', color: C.accent },
   langTextActive: { color: '#FFF', fontWeight: '700' },
+  versionWrap: { paddingVertical: 20, alignItems: 'center' },
+  versionText: { fontSize: 12, color: '#94A3B8', fontWeight: '500' },
   cardPressed: { opacity: 0.6 },
 });
