@@ -5,6 +5,7 @@ import * as ImagePicker from 'expo-image-picker';
 import { ChevronLeft, Plus, X, Camera } from '@/lib/icons';
 import { C } from '@/theme/colors';
 import { useHapticFeedback } from '@/lib/haptics';
+import { useRole } from '@/lib/useRole';
 import { Toast } from '@/components/Toast';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import type { RootStackParamList } from '@/navigation/AppNavigation';
@@ -21,17 +22,18 @@ export default function MediaLibraryScreen({ navigation }: { navigation: NativeS
   const [items, setItems] = useState<MediaItem[]>([]);
   const [toast, setToast] = useState({ visible: false, msg: '' });
   const haptics = useHapticFeedback();
+  const { isAdmin } = useRole();
 
   const pickImage = async () => {
     haptics.impactMedium();
-    const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+    const { status } = await ImagePicker.requestCameraRollPermissionsAsync();
     if (status !== 'granted') {
       setToast({ visible: true, msg: 'Permission required to access photos' });
       return;
     }
-    const result = await ImagePicker.launchImageLibraryAsync({ mediaTypes: ['images'], quality: 0.8 });
-    if (result.canceled) return;
-    const newItems: MediaItem[] = [{ id: `img_${Date.now()}`, uri: result.assets[0].uri }];
+    const result = await ImagePicker.launchImageLibraryAsync({ mediaTypes: ImagePicker.MediaTypeOptions.Images, quality: 0.8 });
+    if (result.cancelled) return;
+    const newItems: MediaItem[] = [{ id: `img_${Date.now()}`, uri: result.uri }];
     setItems((prev) => [...newItems, ...prev]);
     haptics.notificationSuccess();
     setToast({ visible: true, msg: `${newItems.length} image(s) added` });
@@ -46,9 +48,11 @@ export default function MediaLibraryScreen({ navigation }: { navigation: NativeS
   const renderItem = ({ item }: { item: MediaItem }) => (
     <View style={S.tile}>
       <Image source={{ uri: item.uri }} style={S.tileImage} />
-      <Pressable onPress={() => deleteItem(item.id)} style={S.deleteBtn}>
-        <X size={14} color="#FFF" strokeWidth={2.5} />
-      </Pressable>
+      {isAdmin && (
+        <Pressable onPress={() => deleteItem(item.id)} style={S.deleteBtn}>
+          <X size={14} color="#FFF" strokeWidth={2.5} />
+        </Pressable>
+      )}
     </View>
   );
 

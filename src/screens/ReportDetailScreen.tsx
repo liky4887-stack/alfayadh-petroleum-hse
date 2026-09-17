@@ -7,6 +7,8 @@ import { useHapticFeedback } from '@/lib/haptics';
 import { useConfirm } from '@/components/ConfirmDialog';
 import { Toast } from '@/components/Toast';
 import { ChevronLeft, MapPin, Trash2, CircleCheck, Link2, Pencil, Check, X } from '@/lib/icons';
+import { useRole } from '@/lib/useRole';
+import { requireAdmin } from '@/lib/requireAdmin';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import type { RootStackParamList } from '@/navigation/AppNavigation';
 import type { HSEReport } from '@/lib/types';
@@ -23,6 +25,7 @@ export default function ReportDetailScreen({ navigation, route }: { navigation: 
   const [editAction, setEditAction] = useState('');
   const [toast, setToast] = useState({ visible: false, msg: '', type: 'success' as 'success' | 'error' });
   const { confirm, dialog } = useConfirm();
+  const { isAdmin } = useRole();
 
   const loadReport = useCallback(async () => {
     if (!hasReportId) {
@@ -60,13 +63,15 @@ export default function ReportDetailScreen({ navigation, route }: { navigation: 
   };
 
   const handleDelete = async () => {
-    const ok = await confirm({
+    const ok = await requireAdmin();
+    if (!ok) { showToast('Admin access required to delete reports.', 'error'); return; }
+    const confirmed = await confirm({
       title: 'Delete Report',
       message: 'Are you sure you want to permanently delete this report?',
       confirmLabel: 'Delete',
       destructive: true,
     });
-    if (!ok) return;
+    if (!confirmed) return;
     haptics.impactMedium();
     const { error } = await supabase.from('hse_reports').delete().eq('id', reportId);
     if (error) {
@@ -266,10 +271,12 @@ export default function ReportDetailScreen({ navigation, route }: { navigation: 
           </Pressable>
         )}
 
-        <Pressable onPress={handleDelete} style={({ pressed }) => [S.deleteBtn, pressed && S.pressed]}>
-          <Trash2 size={16} color={C.red} strokeWidth={2} />
-          <Text style={S.deleteBtnText}>Delete Report</Text>
-        </Pressable>
+        {isAdmin && (
+          <Pressable onPress={handleDelete} style={({ pressed }) => [S.deleteBtn, pressed && S.pressed]}>
+            <Trash2 size={16} color={C.red} strokeWidth={2} />
+            <Text style={S.deleteBtnText}>Delete Report</Text>
+          </Pressable>
+        )}
       </ScrollView>
       {dialog}
       <Toast message={toast.msg} type={toast.type} visible={toast.visible} onHide={() => setToast({ visible: false, msg: '', type: 'success' })} />

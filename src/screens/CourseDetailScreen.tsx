@@ -5,6 +5,8 @@ import { supabase } from '@/lib/supabase';
 import { C } from '@/theme/colors';
 import { useHapticFeedback } from '@/lib/haptics';
 import { Trash2, Pencil, ChevronLeft, Circle, CircleCheck, Clock, Tag } from '@/lib/icons';
+import { useRole } from '@/lib/useRole';
+import { requireAdmin } from '@/lib/requireAdmin';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import type { RootStackParamList } from '@/navigation/AppNavigation';
 
@@ -31,6 +33,7 @@ interface CourseData {
 
 export default function CourseDetailScreen({ navigation, route }: { navigation: NativeStackNavigationProp<RootStackParamList>; route: any }) {
   const haptics = useHapticFeedback();
+  const { isAdmin } = useRole();
   const courseId: string = route.params?.courseId ?? '';
   const [course, setCourse] = useState<CourseData | null>(null);
   const [enrollments, setEnrollments] = useState<Enrollment[]>([]);
@@ -61,7 +64,9 @@ export default function CourseDetailScreen({ navigation, route }: { navigation: 
     loadData();
   };
 
-  const handleDelete = () => {
+  const handleDelete = async () => {
+    const ok = await requireAdmin();
+    if (!ok) { Alert.alert('Access Denied', 'Admin access required to delete courses.'); return; }
     haptics.impactMedium();
     Alert.alert(
       'Delete Course',
@@ -191,13 +196,15 @@ export default function CourseDetailScreen({ navigation, route }: { navigation: 
             <Pencil size={16} color={C.accent} strokeWidth={2} />
             <Text style={S.editBtnText}>Edit Course</Text>
           </Pressable>
-          <Pressable
-            onPress={handleDelete}
-            style={({ pressed }) => [S.deleteBtn, pressed && S.pressed]}
-          >
-            <Trash2 size={16} color={C.red} strokeWidth={2} />
-            <Text style={S.deleteBtnText}>Delete Course</Text>
-          </Pressable>
+          {isAdmin && (
+            <Pressable
+              onPress={handleDelete}
+              style={({ pressed }) => [S.deleteBtn, pressed && S.pressed]}
+            >
+              <Trash2 size={16} color={C.red} strokeWidth={2} />
+              <Text style={S.deleteBtnText}>Delete Course</Text>
+            </Pressable>
+          )}
         </View>
       </ScrollView>
     </SafeAreaView>
