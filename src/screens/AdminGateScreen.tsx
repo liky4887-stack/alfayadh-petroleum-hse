@@ -1,7 +1,7 @@
 import { useState, useRef, useEffect } from 'react';
 import { View, Text, Pressable, StyleSheet, TextInput } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { C } from '@/theme/colors';
+import { theme } from '@/theme/theme';
 import { useHapticFeedback } from '@/lib/haptics';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useT } from '@/lib/i18n';
@@ -34,12 +34,8 @@ export default function AdminGateScreen({ navigation }: { navigation: any }) {
     next[index] = value;
     setPin(next);
     setError(null);
-    if (value && index < 3) {
-      refs.current[index + 1]?.focus();
-    }
-    if (index === 3 && value) {
-      checkPin(next.join(''));
-    }
+    if (value && index < 3) refs.current[index + 1]?.focus();
+    if (index === 3 && value) checkPin(next.join(''));
   };
 
   const checkPin = async (entered: string) => {
@@ -99,18 +95,18 @@ export default function AdminGateScreen({ navigation }: { navigation: any }) {
 }
 
 const S = StyleSheet.create({
-  screen: { flex: 1, backgroundColor: C.canvas },
+  screen: { flex: 1, backgroundColor: theme.bg },
   body: { flex: 1, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 24, gap: 16 },
-  title: { fontSize: 24, fontWeight: '800', color: C.ink, letterSpacing: -0.3 },
-  subtitle: { fontSize: 15, fontWeight: '500', color: C.muted, textAlign: 'center' },
+  title: { fontSize: 24, fontWeight: '800', color: theme.text, letterSpacing: -0.3 },
+  subtitle: { fontSize: 15, fontWeight: '500', color: theme.textDim, textAlign: 'center' },
   pinRow: { flexDirection: 'row', gap: 16, marginTop: 20 },
   pinBox: {
-    width: 56, height: 64, borderRadius: 14, borderWidth: 2, borderColor: C.border,
-    backgroundColor: '#FFF', fontSize: 28, fontWeight: '800', color: C.ink, textAlign: 'center',
+    width: 56, height: 64, borderRadius: 14, borderWidth: 2, borderColor: theme.border,
+    backgroundColor: theme.card, fontSize: 28, fontWeight: '800', color: theme.text, textAlign: 'center',
   },
-  pinBoxError: { borderColor: C.red },
-  errorText: { fontSize: 14, fontWeight: '600', color: C.red, textAlign: 'center' },
+  pinBoxError: { borderColor: theme.danger },
+  errorText: { fontSize: 14, fontWeight: '600', color: theme.danger, textAlign: 'center' },
   cancelBtn: { marginTop: 20, paddingVertical: 10, paddingHorizontal: 24 },
-  cancelText: { fontSize: 15, fontWeight: '600', color: C.muted },
+  cancelText: { fontSize: 15, fontWeight: '600', color: theme.textDim },
   pressed: { opacity: 0.7 },
 });

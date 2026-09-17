@@ -1,7 +1,8 @@
 import { useEffect, useMemo } from 'react';
 import { ScrollView, Text, View, StyleSheet } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { Dark, TYPE_LABELS } from '@/theme/colors';
+import { theme } from '@/theme/theme';
+import { TYPE_LABELS } from '@/theme/colors';
 import { useHSEStore } from '@/lib/store';
 import { LoadingState } from '@/components/ui';
 import { Header } from '@/components/Header';
@@ -28,11 +29,7 @@ export default function AdminScreen({ navigation }: { navigation: NativeStackNav
 
   const deptCounts = useMemo(() => {
     const counts: Record<string, number> = {};
-    reports.forEach((r) => {
-      if (r.type !== 'safe' && r.department) {
-        counts[r.department] = (counts[r.department] ?? 0) + 1;
-      }
-    });
+    reports.forEach((r) => { if (r.type !== 'safe' && r.department) counts[r.department] = (counts[r.department] ?? 0) + 1; });
     const entries = Object.entries(counts).sort((a, b) => b[1] - a[1]).slice(0, 8);
     const max = entries.length > 0 ? (entries[0]?.[1] ?? 1) : 1;
     return entries.map(([dept, count]) => ({ dept, count, pct: Math.round((count / max) * 100) }));
@@ -43,34 +40,31 @@ export default function AdminScreen({ navigation }: { navigation: NativeStackNav
   if (loading) {
     return (
       <SafeAreaView style={S.screen} edges={['top']}>
-        <Header title="لوحة المسؤول" currentScreen="Admin" navigation={navigation} showBack />
-        <View style={{ flex: 1 }}>
-          <LoadingState label="جاري تحميل البيانات..." />
-        </View>
+        <Header title="Admin Dashboard" currentScreen="Admin" navigation={navigation} showBack />
+        <View style={{ flex: 1 }}><LoadingState label="Loading data..." /></View>
       </SafeAreaView>
     );
   }
 
   return (
     <SafeAreaView style={S.screen} edges={['top']}>
-      <Header title="لوحة المسؤول" currentScreen="Admin" navigation={navigation} showBack />
+      <Header title="Admin Dashboard" currentScreen="Admin" navigation={navigation} showBack />
       <ScrollView style={S.scroll}>
         <View style={S.body}>
           <View style={S.kpiRow}>
-            <KPICard label="إجمالي التقارير" value={stats.total} color={Dark.offWhite} />
-            <KPICard label="مفتوحة" value={stats.open} color={Dark.red} />
-            <KPICard label="مغلقة" value={stats.closed} color={Dark.green} />
+            <KPICard label="Total Reports" value={stats.total} color={theme.text} />
+            <KPICard label="Open" value={stats.open} color={theme.danger} />
+            <KPICard label="Closed" value={stats.closed} color={theme.success} />
           </View>
           <View style={S.kpiRow}>
-            <KPICard label="وضع آمن" value={stats.safe} color={Dark.emerald} small />
-            <KPICard label="وضع غير آمن" value={stats.unsafe} color={Dark.red} small />
+            <KPICard label="Safe" value={stats.safe} color={theme.success} small />
+            <KPICard label="Unsafe" value={stats.unsafe} color={theme.danger} small />
           </View>
-
           <View style={S.section}>
-            <Text style={S.sectionTitle}>الأقسام الأكثر تكراراً للمشاكل</Text>
+            <Text style={S.sectionTitle}>Most Frequent Problem Departments</Text>
             <View style={S.chartCard}>
               {deptCounts.length === 0 ? (
-                <Text style={S.chartEmpty}>لا توجد بيانات بعد</Text>
+                <Text style={S.chartEmpty}>No data yet</Text>
               ) : (
                 deptCounts.map(({ dept, count, pct }) => (
                   <View key={dept} style={S.barRow}>
@@ -86,13 +80,10 @@ export default function AdminScreen({ navigation }: { navigation: NativeStackNav
               )}
             </View>
           </View>
-
           <View style={S.section}>
-            <Text style={S.sectionTitle}>التقارير المفتوحة — تحتاج تدخل</Text>
+            <Text style={S.sectionTitle}>Open Reports — Needs Action</Text>
             {recentOpen.length === 0 ? (
-              <View style={S.emptyCard}>
-                <Text style={S.emptyText}>لا توجد تقارير مفتوحة</Text>
-              </View>
+              <View style={S.emptyCard}><Text style={S.emptyText}>No open reports</Text></View>
             ) : (
               <View style={S.reportList}>
                 {recentOpen.map((r, i) => (
@@ -123,30 +114,30 @@ function KPICard({ label, value, color, small }: { label: string; value: number;
 }
 
 const S = StyleSheet.create({
-  screen: { flex: 1, backgroundColor: Dark.obsidian },
+  screen: { flex: 1, backgroundColor: theme.bg },
   scroll: { flex: 1 },
   body: { padding: 20, gap: 24 },
   kpiRow: { flexDirection: 'row', gap: 12 },
-  kpiCard: { flex: 1, borderWidth: 1, borderColor: Dark.graphite, borderRadius: 10, backgroundColor: Dark.slate, paddingVertical: 20, paddingHorizontal: 16 },
-  kpiValue: { fontWeight: '800', fontVariant: ['tabular-nums'] },
-  kpiLabel: { color: Dark.steel, fontSize: 12, marginTop: 4 },
+  kpiCard: { flex: 1, borderWidth: 1, borderColor: theme.border, borderRadius: 14, backgroundColor: theme.card, paddingVertical: 20, paddingHorizontal: 16 },
+  kpiValue: { fontWeight: '700', fontVariant: ['tabular-nums'] },
+  kpiLabel: { color: theme.textDim, fontSize: 12, marginTop: 4 },
   section: { gap: 12 },
-  sectionTitle: { color: Dark.steel, fontSize: 14, fontWeight: '700', letterSpacing: 0.3 },
-  chartCard: { borderWidth: 1, borderColor: Dark.graphite, borderRadius: 10, backgroundColor: Dark.slate, padding: 16, gap: 14 },
-  chartEmpty: { color: Dark.steel, fontSize: 14, textAlign: 'center', paddingVertical: 20 },
+  sectionTitle: { color: theme.textDim, fontSize: 14, fontWeight: '700', letterSpacing: 0.3 },
+  chartCard: { borderWidth: 1, borderColor: theme.border, borderRadius: 14, backgroundColor: theme.card, padding: 16, gap: 14 },
+  chartEmpty: { color: theme.textDim, fontSize: 14, textAlign: 'center', paddingVertical: 20 },
   barRow: { gap: 6 },
   barLabel: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
-  barDept: { color: Dark.offWhite, fontSize: 13, fontWeight: '600' },
-  barCount: { color: Dark.steel, fontSize: 13, fontWeight: '700', fontVariant: ['tabular-nums'] },
-  barTrack: { height: 6, borderRadius: 3, backgroundColor: Dark.graphite, overflow: 'hidden' },
-  barFill: { height: '100%', backgroundColor: Dark.emerald, borderRadius: 3 },
-  emptyCard: { borderWidth: 1, borderColor: Dark.graphite, borderRadius: 10, backgroundColor: Dark.slate, padding: 20, alignItems: 'center' },
-  emptyText: { color: Dark.green, fontSize: 14, fontWeight: '600' },
-  reportList: { borderWidth: 1, borderColor: Dark.graphite, borderRadius: 10, overflow: 'hidden' },
-  reportRow: { flexDirection: 'row', alignItems: 'center', paddingVertical: 14, paddingHorizontal: 16, backgroundColor: Dark.slate, gap: 12 },
-  reportBorder: { borderBottomWidth: 1, borderBottomColor: Dark.graphite },
+  barDept: { color: theme.text, fontSize: 13, fontWeight: '600' },
+  barCount: { color: theme.textDim, fontSize: 13, fontWeight: '700', fontVariant: ['tabular-nums'] },
+  barTrack: { height: 6, borderRadius: 3, backgroundColor: theme.border, overflow: 'hidden' },
+  barFill: { height: '100%', backgroundColor: theme.primary, borderRadius: 3 },
+  emptyCard: { borderWidth: 1, borderColor: theme.border, borderRadius: 14, backgroundColor: theme.card, padding: 20, alignItems: 'center' },
+  emptyText: { color: theme.success, fontSize: 14, fontWeight: '600' },
+  reportList: { borderWidth: 1, borderColor: theme.border, borderRadius: 14, overflow: 'hidden', backgroundColor: theme.card },
+  reportRow: { flexDirection: 'row', alignItems: 'center', paddingVertical: 14, paddingHorizontal: 16, gap: 12 },
+  reportBorder: { borderBottomWidth: 1, borderBottomColor: theme.border },
   reportType: { minWidth: 80 },
-  reportTypeText: { color: Dark.red, fontSize: 12, fontWeight: '700' },
-  reportDept: { color: Dark.steel, fontSize: 11, marginTop: 2 },
-  reportNote: { flex: 1, color: Dark.offWhite, fontSize: 14 },
+  reportTypeText: { color: theme.danger, fontSize: 12, fontWeight: '700' },
+  reportDept: { color: theme.textDim, fontSize: 11, marginTop: 2 },
+  reportNote: { flex: 1, color: theme.text, fontSize: 14 },
 });
