@@ -1,81 +1,100 @@
-import { useState, useEffect, useCallback } from 'react';
-import { View, Text, Pressable, StyleSheet, FlatList, ActivityIndicator, ListRenderItem } from 'react-native';
+import { useState, useCallback } from 'react';
+import { View, Text, Pressable, StyleSheet, FlatList, ActivityIndicator, Modal, ListRenderItem } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { supabase } from '@/lib/supabase';
-import { C, TYPE_LABELS, STATUS_LABELS, formatDate } from '@/theme/colors';
-import { BrandHeader, IconButton } from '@/components/Shared';
+import { useFocusEffect } from '@react-navigation/native';
+import { Plus, ChevronRight, Pencil, Trash2, CircleCheck } from '@/lib/icons';
+import { C } from '@/theme/colors';
+import { BrandHeader, IconButton, StatusPill } from '@/components/Shared';
 import { useHapticFeedback } from '@/lib/haptics';
-import { Plus, ChevronRight } from '@/lib/icons';
-import type { HSEReport } from '@/lib/types';
+import { supabase } from '@/lib/supabase';
+import { useHSEStore } from '@/lib/store';
+import { Toast } from '@/components/Toast';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import type { RootStackParamList } from '@/navigation/AppNavigation';
 
-type FilterKey = 'safe' | 'unsafe' | 'open' | 'all';
+type FilterKey = 'all' | 'todo' | 'in_progress' | 'completed';
 
 const FILTERS: { key: FilterKey; label: string }[] = [
   { key: 'all', label: 'All' },
-  { key: 'safe', label: 'Safe' },
-  { key: 'unsafe', label: 'Unsafe' },
-  { key: 'open', label: 'Open' },
+  { key: 'todo', label: 'To-Do' },
+  { key: 'in_progress', label: 'In Progress' },
+  { key: 'completed', label: 'Done' },
 ];
 
-export default function ActionsScreen({ navigation, route }: { navigation: NativeStackNavigationProp<RootStackParamList>; route: any }) {
+const PRIORITY_TONE: Record<string, 'red' | 'orange' | 'yellow' | 'gray'> = {
+  Critical: 'red', High: 'orange', Medium: 'yellow', Low: 'gray',
+};
+
+const STATUS_TONE: Record<string, 'blue' | 'yellow' | 'green'> = {
+  todo: 'blue', in_progress: 'yellow', completed: 'green',
+};
+
+interface ActionItem {
+  id: string;
+  title: string;
+  type: string | null;
+  priority: string | null;
+  status: string;
+  assignee: string | null;
+  due_date: string | null;
+}
+
+export default function ActionsScreen({ navigation }: { navigation: NativeStackNavigationProp<RootStackParamList> }) {
   const haptics = useHapticFeedback();
-  const [activeFilter, setActiveFilter] = useState<FilterKey>((route.params?.filter as FilterKey) ?? 'all');
-  const [reports, setReports] = useState<HSEReport[]>([]);
+  const { actions, loadActions } = useHSEStore();
+  const [activeFilter, setActiveFilter] = useState<FilterKey>('all');
   const [loading, setLoading] = useState(true);
+  const [quickAction, setQuickAction] = useState<ActionItem | null>(null);
+  const [toast, setToast] = useState({ visible: false, msg: '', type: 'success' as 'success' | 'error' });
 
-  const loadReports = useCallback(async () => {
+  useFocusEffect(useCallback(() => {
     setLoading(true);
-    let query = supabase.from('hse_reports').select('*').order('created_at', { ascending: false }).limit(100);
-    if (activeFilter === 'safe') query = query.eq('type', 'safe');
-    else if (activeFilter === 'unsafe') query = query.in('type', ['unsafe_condition', 'unsafe_act']);
-    else if (activeFilter === 'open') query = query.eq('status', 'open');
-    const { data } = await query;
-    setReports(data ?? []);
-    setLoading(false);
-    console.log('[ActionsScreen] filter:', activeFilter, 'rows:', (data ?? []).length);
-  }, [activeFilter]);
+    loadActions().finally(() => setLoading(false));
+  }, [loadActions]));
 
-  useEffect(() => { loadReports(); }, [loadReports]);
-  useEffect(() => { navigation.addListener('focus', loadReports); return () => navigation.removeListener('focus', loadReports); }, [navigation, loadReports]);
+  const filteredActions = actions.filter((a) => {
+    if (activeFilter === 'all') return true;
+    return a.status === activeFilter;
+  });
 
-  useEffect(() => {
-    const f = route.params?.filter as FilterKey | undefined;
-    if (f) setActiveFilter(f);
-  }, [route.params?.filter]);
-
-  const handleFilterChange = (key: FilterKey) => {
+  const handleDelete = async (action: ActionItem) => {
     haptics.impactMedium();
-    setActiveFilter(key);
+    setQuickAction(null);
+    try {
+      const { error } = await supabase.from('actions').delete().eq('id', action.id);
+      if (error) {
+        haptics.notificationError();
+        setToast({ visible: true, msg: `Failed: ${error.message}`, type: 'error' });
+        return;
+      }
+      await loadActions();
+      haptics.notificationSuccess();
+      setToast({ visible: true, msg: 'Action deleted', type: 'success' });
+    } catch (err) {
+      console.error('Delete error:', err);
+      haptics.notificationError();
+      setToast({ visible: true, msg: 'Failed to delete', type: 'error' });
+    }
   };
 
-  const renderReport: ListRenderItem<HSEReport> = ({ item }) => {
-    const typeColor = item.type === 'safe' ? '#16A34A' : '#DC2626';
-    const typeBg = item.type === 'safe' ? '#E6F4EA' : '#FCE8E6';
-    const isOpen = item.status === 'open';
-    return (
-      <Pressable
-        onPress={() => { haptics.impactMedium(); navigation.navigate('ReportDetail', { reportId: item.id }); }}
-        style={({ pressed }) => [S.reportRow, pressed && S.pressed]}
-      >
-        <View style={[S.typeBadge, { backgroundColor: typeBg }]}>
-          <Text style={[S.typeBadgeText, { color: typeColor }]}>{TYPE_LABELS[item.type] ?? item.type}</Text>
-        </View>
-        <View style={S.reportBody}>
-          <Text style={S.reportNote} numberOfLines={2}>{item.note}</Text>
-          <View style={S.reportFooter}>
-            {item.department && <Text style={S.reportDept}>{item.department}</Text>}
-            <Text style={S.reportTime}>{formatDate(item.created_at)}</Text>
-            <View style={[S.statusPill, { backgroundColor: isOpen ? '#FEF7E0' : '#E6F4EA' }]}>
-              <Text style={[S.statusPillText, { color: isOpen ? '#EA580C' : '#16A34A' }]}>{isOpen ? 'Open' : 'Closed'}</Text>
-            </View>
-          </View>
-        </View>
-        <ChevronRight size={16} color="#94A3B8" strokeWidth={2} />
-      </Pressable>
-    );
-  };
+  const renderAction: ListRenderItem<ActionItem> = ({ item }) => (
+    <Pressable
+      onPress={() => { haptics.impactMedium(); navigation.navigate('ActionDetail', { actionId: item.id }); }}
+      onLongPress={() => { haptics.impactMedium(); setQuickAction(item); }}
+      style={({ pressed }) => [S.actionRow, pressed && S.pressed]}
+    >
+      <View style={S.rowTop}>
+        {item.type && <View style={S.typeBadge}><Text style={S.typeBadgeText}>{item.type.toUpperCase()}</Text></View>}
+        {item.priority && <StatusPill label={item.priority} tone={PRIORITY_TONE[item.priority] ?? 'gray'} />}
+      </View>
+      <Text style={S.actionTitle} numberOfLines={2}>{item.title}</Text>
+      <View style={S.rowBottom}>
+        <Text style={S.actionMeta}>{item.assignee ?? 'Unassigned'}</Text>
+        <Text style={S.actionDue}>{item.due_date ?? 'No due date'}</Text>
+        <StatusPill label={item.status} tone={STATUS_TONE[item.status] ?? 'blue'} />
+      </View>
+    </Pressable>
+  );
 
   return (
     <SafeAreaView style={S.screen} edges={['top']}>
@@ -87,7 +106,7 @@ export default function ActionsScreen({ navigation, route }: { navigation: Nativ
         {FILTERS.map((f) => (
           <Pressable
             key={f.key}
-            onPress={() => handleFilterChange(f.key)}
+            onPress={() => { haptics.impactMedium(); setActiveFilter(f.key); }}
             style={({ pressed }) => [S.filterChip, activeFilter === f.key && S.filterChipActive, pressed && S.pressed]}
           >
             <Text style={[S.filterChipText, activeFilter === f.key && S.filterChipTextActive]}>{f.label}</Text>
@@ -96,16 +115,17 @@ export default function ActionsScreen({ navigation, route }: { navigation: Nativ
       </View>
       {loading ? (
         <View style={S.loadingWrap}><ActivityIndicator size="large" color="#0EA5E9" /></View>
-      ) : reports.length === 0 ? (
+      ) : filteredActions.length === 0 ? (
         <View style={S.emptyState}>
-          <Text style={S.emptyTitle}>No reports found</Text>
-          <Text style={S.emptyText}>Reports matching this filter will appear here.</Text>
+          <CircleCheck size={48} color="#CBD5E1" strokeWidth={1.5} />
+          <Text style={S.emptyTitle}>No actions yet</Text>
+          <Text style={S.emptyText}>Tap + to create one</Text>
         </View>
       ) : (
         <FlatList
-          data={reports}
+          data={filteredActions}
           keyExtractor={(item) => item.id}
-          renderItem={renderReport}
+          renderItem={renderAction}
           contentContainerStyle={S.listContent}
         />
       )}
@@ -115,6 +135,30 @@ export default function ActionsScreen({ navigation, route }: { navigation: Nativ
       >
         <Plus size={26} color="#FFFFFF" strokeWidth={2.5} />
       </Pressable>
+
+      <Modal transparent animationType="fade" visible={!!quickAction} onRequestClose={() => setQuickAction(null)}>
+        <Pressable style={S.modalOverlay} onPress={() => setQuickAction(null)}>
+          <View style={S.modalCard}>
+            <Text style={S.modalTitle} numberOfLines={1}>{quickAction?.title ?? 'Action'}</Text>
+            <Pressable
+              onPress={() => { const a = quickAction; setQuickAction(null); if (a) navigation.navigate('NewAction', { mode: 'edit', actionId: a.id }); }}
+              style={({ pressed }) => [S.modalRow, pressed && S.pressed]}
+            >
+              <Pencil size={18} color="#0EA5E9" strokeWidth={2} />
+              <Text style={S.modalRowText}>Edit</Text>
+            </Pressable>
+            <Pressable
+              onPress={() => { if (quickAction) handleDelete(quickAction); }}
+              style={({ pressed }) => [S.modalRow, pressed && S.pressed]}
+            >
+              <Trash2 size={18} color="#DC2626" strokeWidth={2} />
+              <Text style={[S.modalRowText, { color: '#DC2626' }]}>Delete</Text>
+            </Pressable>
+          </View>
+        </Pressable>
+      </Modal>
+
+      <Toast message={toast.msg} type={toast.type} visible={toast.visible} onHide={() => setToast({ visible: false, msg: '', type: 'success' })} />
     </SafeAreaView>
   );
 }
@@ -128,19 +172,22 @@ const S = StyleSheet.create({
   filterChipTextActive: { color: '#FFFFFF', fontWeight: '700' },
   loadingWrap: { flex: 1, alignItems: 'center', justifyContent: 'center' },
   listContent: { paddingHorizontal: 20, paddingBottom: 100, paddingTop: 12 },
-  reportRow: { flexDirection: 'row', alignItems: 'flex-start', gap: 10, backgroundColor: '#FFFFFF', borderRadius: 14, padding: 14, borderWidth: 1, borderColor: '#E5E7EB', marginBottom: 10 },
-  typeBadge: { paddingHorizontal: 8, paddingVertical: 4, borderRadius: 6, alignSelf: 'flex-start' },
-  typeBadgeText: { fontSize: 10, fontWeight: '700' },
-  reportBody: { flex: 1, minWidth: 0 },
-  reportNote: { fontSize: 14, fontWeight: '600', color: '#0F172A', lineHeight: 20, marginBottom: 8 },
-  reportFooter: { flexDirection: 'row', alignItems: 'center', gap: 8, flexWrap: 'wrap' },
-  reportDept: { fontSize: 12, fontWeight: '500', color: '#64748B' },
-  reportTime: { fontSize: 12, fontWeight: '400', color: '#94A3B8' },
-  statusPill: { paddingHorizontal: 8, paddingVertical: 3, borderRadius: 6 },
-  statusPillText: { fontSize: 11, fontWeight: '700' },
+  actionRow: { backgroundColor: '#FFFFFF', borderRadius: 14, padding: 14, borderWidth: 1, borderColor: '#E5E7EB', marginBottom: 10, gap: 8 },
+  rowTop: { flexDirection: 'row', alignItems: 'center', gap: 8, flexWrap: 'wrap' },
+  typeBadge: { paddingHorizontal: 8, paddingVertical: 4, borderRadius: 6, backgroundColor: '#E0F2FE' },
+  typeBadgeText: { fontSize: 10, fontWeight: '700', color: '#0EA5E9', letterSpacing: 0.4 },
+  actionTitle: { fontSize: 16, fontWeight: '700', color: '#0F172A' },
+  rowBottom: { flexDirection: 'row', alignItems: 'center', gap: 8, flexWrap: 'wrap' },
+  actionMeta: { fontSize: 12, fontWeight: '500', color: '#64748B' },
+  actionDue: { fontSize: 12, fontWeight: '400', color: '#94A3B8' },
   emptyState: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: 10, paddingHorizontal: 40 },
   emptyTitle: { fontSize: 18, fontWeight: '700', color: '#0F172A' },
   emptyText: { fontSize: 14, fontWeight: '400', color: '#64748B', textAlign: 'center' },
-  fab: { position: 'absolute', bottom: 100, right: 20, width: 56, height: 56, borderRadius: 28, backgroundColor: '#0EA5E9', alignItems: 'center', justifyContent: 'center', shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.05, shadowRadius: 4, elevation: 2 },
+  fab: { position: 'absolute', bottom: 100, right: 20, width: 56, height: 56, borderRadius: 28, backgroundColor: '#0EA5E9', alignItems: 'center', justifyContent: 'center', shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.1, shadowRadius: 4, elevation: 3 },
+  modalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.5)', alignItems: 'center', justifyContent: 'center', padding: 24 },
+  modalCard: { backgroundColor: '#FFF', borderRadius: 16, padding: 20, width: '100%', gap: 4 },
+  modalTitle: { fontSize: 17, fontWeight: '800', color: '#0F172A', marginBottom: 12 },
+  modalRow: { flexDirection: 'row', alignItems: 'center', gap: 12, paddingVertical: 14, borderBottomWidth: 1, borderBottomColor: '#E5E7EB' },
+  modalRowText: { fontSize: 16, fontWeight: '600', color: '#0F172A' },
   pressed: { opacity: 0.7 },
 });
