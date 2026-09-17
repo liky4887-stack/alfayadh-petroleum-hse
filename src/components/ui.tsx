@@ -1,5 +1,5 @@
 import { Pressable, StyleSheet, Text, View, TextInput as RNTextInput, ActivityIndicator } from 'react-native';
-import { Dark } from '@/theme/colors';
+import { theme } from '@/theme/theme';
 
 interface ButtonProps {
   label: string;
@@ -12,26 +12,26 @@ interface ButtonProps {
 
 export function Button({ label, onPress, variant = 'primary', disabled, fullWidth, icon }: ButtonProps) {
   const bg =
-    variant === 'primary' ? Dark.emerald
-    : variant === 'danger' ? Dark.red
-    : variant === 'secondary' ? Dark.slate
+    variant === 'primary' ? theme.primary
+    : variant === 'danger' ? theme.danger
+    : variant === 'secondary' ? theme.cardAlt
     : 'transparent';
   const borderColor =
-    variant === 'primary' ? Dark.emerald
-    : variant === 'danger' ? Dark.red
-    : variant === 'secondary' ? Dark.graphite
-    : Dark.graphite;
-  const textColor = variant === 'ghost' ? Dark.steel : Dark.offWhite;
+    variant === 'primary' ? theme.primary
+    : variant === 'danger' ? theme.danger
+    : variant === 'secondary' ? theme.border
+    : theme.border;
+  const textColor = variant === 'ghost' ? theme.textDim : '#FFFFFF';
 
   return (
     <Pressable
       onPress={onPress}
       disabled={disabled}
       style={({ pressed }) => ({
-        backgroundColor: pressed ? Dark.emeraldHover : bg,
+        backgroundColor: pressed ? theme.primaryDark : bg,
         borderColor,
         borderWidth: 1,
-        borderRadius: 10,
+        borderRadius: 12,
         paddingVertical: 16,
         paddingHorizontal: 20,
         minHeight: 48,
@@ -57,7 +57,7 @@ interface ChipProps {
 }
 
 export function Chip({ label, selected, onPress, color }: ChipProps) {
-  const accent = color ?? Dark.emerald;
+  const accent = color ?? theme.primary;
   return (
     <Pressable
       onPress={onPress}
@@ -66,13 +66,13 @@ export function Chip({ label, selected, onPress, color }: ChipProps) {
         paddingHorizontal: 16,
         borderRadius: 8,
         borderWidth: 1,
-        borderColor: selected ? accent : Dark.graphite,
-        backgroundColor: selected ? `${accent}22` : 'transparent',
+        borderColor: selected ? accent : theme.border,
+        backgroundColor: selected ? theme.primaryLight : theme.card,
         opacity: pressed ? 0.7 : 1,
       })}
     >
       <Text style={{
-        color: selected ? accent : Dark.offWhite,
+        color: selected ? accent : theme.textDim,
         fontSize: 14,
         fontWeight: selected ? '700' : '400',
       }}>
@@ -84,7 +84,7 @@ export function Chip({ label, selected, onPress, color }: ChipProps) {
 
 export function StatusBadge({ status }: { status: 'open' | 'closed' }) {
   const isOpen = status === 'open';
-  const color = isOpen ? Dark.red : Dark.green;
+  const color = isOpen ? theme.warning : theme.success;
   return (
     <View style={{
       paddingVertical: 3,
@@ -92,10 +92,10 @@ export function StatusBadge({ status }: { status: 'open' | 'closed' }) {
       borderRadius: 6,
       borderWidth: 1,
       borderColor: `${color}55`,
-      backgroundColor: `${color}22`,
+      backgroundColor: isOpen ? theme.warningLight : theme.successLight,
     }}>
       <Text style={{ color, fontSize: 11, fontWeight: '700', fontVariant: ['tabular-nums'] }}>
-        {isOpen ? 'مفتوحة' : 'مغلقة'}
+        {isOpen ? 'Open' : 'Closed'}
       </Text>
     </View>
   );
@@ -104,8 +104,8 @@ export function StatusBadge({ status }: { status: 'open' | 'closed' }) {
 export function LoadingState({ label }: { label?: string }) {
   return (
     <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center', paddingVertical: 60, gap: 16 }}>
-      <ActivityIndicator size="small" color={Dark.emerald} />
-      <Text style={{ color: Dark.steel, fontSize: 14 }}>{label ?? 'جاري التحميل...'}</Text>
+      <ActivityIndicator size="small" color={theme.primary} />
+      <Text style={{ color: theme.textDim, fontSize: 14 }}>{label ?? 'Loading...'}</Text>
     </View>
   );
 }
@@ -122,9 +122,9 @@ export function TextInput({ value, onChangeText, placeholder, multiline, numberO
   return (
     <View style={{
       borderWidth: 1,
-      borderColor: Dark.graphite,
-      borderRadius: 10,
-      backgroundColor: Dark.slate,
+      borderColor: theme.border,
+      borderRadius: 12,
+      backgroundColor: theme.card,
       paddingHorizontal: 14,
       paddingVertical: 12,
       minHeight: 48,
@@ -133,15 +133,14 @@ export function TextInput({ value, onChangeText, placeholder, multiline, numberO
         value={value}
         onChangeText={onChangeText}
         placeholder={placeholder}
-        placeholderTextColor={Dark.steel}
+        placeholderTextColor={theme.textFaint}
         multiline={multiline}
         numberOfLines={numberOfLines}
-        textAlign="right"
+        textAlign="left"
         style={{
-          color: Dark.offWhite,
+          color: theme.text,
           fontSize: 15,
           fontWeight: '400',
-          textAlign: 'right',
           minHeight: multiline ? 100 : undefined,
         }}
       />
