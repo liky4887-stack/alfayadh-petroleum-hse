@@ -1,12 +1,13 @@
 import { View, Text, Pressable, StyleSheet } from 'react-native';
-import AsyncStorage from '@react-native-async-storage/async-storage';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { UserRound, ImageIcon, Menu, ChevronRight, Globe, LogOut } from '@/lib/icons';
+import { UserRound, ImageIcon, Menu, ChevronRight, Globe, LogOut, Share2 } from '@/lib/icons';
 import { C } from '@/theme/colors';
 import { BrandHeader } from '@/components/Shared';
 import { useHapticFeedback } from '@/lib/haptics';
 import { useT, useLanguage } from '@/lib/i18n';
 import { supabase } from '@/lib/supabase';
+import { useRole } from '@/lib/useRole';
+import { exportHSEReport } from '@/lib/pdfReport';
 import type { ReactNode } from 'react';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import type { RootStackParamList } from '@/navigation/AppNavigation';
@@ -15,24 +16,16 @@ export default function MoreScreen({ navigation }: { navigation: NativeStackNavi
   const haptics = useHapticFeedback();
   const t = useT();
   const { lang, setLang } = useLanguage();
+  const { isAdmin } = useRole();
 
   const handleLogout = async () => {
     haptics.impactMedium();
     try { await supabase.auth.signOut(); } catch { /* ignore */ }
   };
 
-  const handleVersionLongPress = async () => {
-    haptics.notificationWarning();
-    try {
-      const session = await AsyncStorage.getItem('admin_session');
-      if (session === 'true') {
-        navigation.navigate('AdminPanel');
-      } else {
-        navigation.navigate('AdminLogin');
-      }
-    } catch {
-      navigation.navigate('AdminLogin');
-    }
+  const handleExport = async () => {
+    haptics.impactMedium();
+    await exportHSEReport();
   };
 
   return (
@@ -43,14 +36,9 @@ export default function MoreScreen({ navigation }: { navigation: NativeStackNavi
           <MoreRow icon={<UserRound size={19} color={C.accent} strokeWidth={1.8} />} label={t('profile')} onPress={() => { haptics.impactMedium(); navigation.navigate('Profile'); }} />
           <MoreRow icon={<ImageIcon size={19} color={C.accent} strokeWidth={1.8} />} label={t('mediaLibrary')} onPress={() => { haptics.impactMedium(); navigation.navigate('MediaLibrary'); }} />
           <MoreRow icon={<Menu size={19} color={C.accent} strokeWidth={1.8} />} label={t('helpSupport')} onPress={() => { haptics.impactMedium(); navigation.navigate('Help'); }} />
-
-          <Pressable
-            onLongPress={handleVersionLongPress}
-            delayLongPress={1500}
-            style={S.versionWrap}
-          >
-            <Text style={S.versionText}>v1.0.0</Text>
-          </Pressable>
+          {isAdmin && (
+            <MoreRow icon={<Share2 size={19} color={C.accent} strokeWidth={1.8} />} label="Export HSE Report (PDF)" onPress={handleExport} />
+          )}
         </View>
 
         <Text style={S.sectionTitle}>{t('language')}</Text>
@@ -102,7 +90,5 @@ const S = StyleSheet.create({
   langBtnActive: { backgroundColor: C.accent, borderColor: C.accent },
   langText: { fontSize: 15, fontWeight: '600', color: C.accent },
   langTextActive: { color: '#FFF', fontWeight: '700' },
-  versionWrap: { paddingVertical: 20, alignItems: 'center' },
-  versionText: { fontSize: 12, color: '#94A3B8', fontWeight: '500' },
   cardPressed: { opacity: 0.6 },
 });

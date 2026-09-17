@@ -8,6 +8,8 @@ import { BrandHeader, IconButton, StatusPill } from '@/components/Shared';
 import { useHapticFeedback } from '@/lib/haptics';
 import { supabase } from '@/lib/supabase';
 import { useHSEStore } from '@/lib/store';
+import { useRole } from '@/lib/useRole';
+import { requireAdmin } from '@/lib/requireAdmin';
 import { Toast } from '@/components/Toast';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import type { RootStackParamList } from '@/navigation/AppNavigation';
@@ -42,6 +44,7 @@ interface ActionItem {
 export default function ActionsScreen({ navigation }: { navigation: NativeStackNavigationProp<RootStackParamList> }) {
   const haptics = useHapticFeedback();
   const { actions, loadActions } = useHSEStore();
+  const { isAdmin } = useRole();
   const [activeFilter, setActiveFilter] = useState<FilterKey>('all');
   const [loading, setLoading] = useState(true);
   const [quickAction, setQuickAction] = useState<ActionItem | null>(null);
@@ -58,6 +61,8 @@ export default function ActionsScreen({ navigation }: { navigation: NativeStackN
   });
 
   const handleDelete = async (action: ActionItem) => {
+    const ok = await requireAdmin();
+    if (!ok) { setToast({ visible: true, msg: 'Admin access required to delete.', type: 'error' }); return; }
     haptics.impactMedium();
     setQuickAction(null);
     try {
@@ -80,7 +85,7 @@ export default function ActionsScreen({ navigation }: { navigation: NativeStackN
   const renderAction: ListRenderItem<ActionItem> = ({ item }) => (
     <Pressable
       onPress={() => { haptics.impactMedium(); navigation.navigate('ActionDetail', { actionId: item.id }); }}
-      onLongPress={() => { haptics.impactMedium(); setQuickAction(item); }}
+      onLongPress={() => { if (isAdmin) { haptics.impactMedium(); setQuickAction(item); } }}
       style={({ pressed }) => [S.actionRow, pressed && S.pressed]}
     >
       <View style={S.rowTop}>
@@ -147,13 +152,15 @@ export default function ActionsScreen({ navigation }: { navigation: NativeStackN
               <Pencil size={18} color="#0EA5E9" strokeWidth={2} />
               <Text style={S.modalRowText}>Edit</Text>
             </Pressable>
-            <Pressable
-              onPress={() => { if (quickAction) handleDelete(quickAction); }}
-              style={({ pressed }) => [S.modalRow, pressed && S.pressed]}
-            >
-              <Trash2 size={18} color="#DC2626" strokeWidth={2} />
-              <Text style={[S.modalRowText, { color: '#DC2626' }]}>Delete</Text>
-            </Pressable>
+            {isAdmin && (
+              <Pressable
+                onPress={() => { if (quickAction) handleDelete(quickAction); }}
+                style={({ pressed }) => [S.modalRow, pressed && S.pressed]}
+              >
+                <Trash2 size={18} color="#DC2626" strokeWidth={2} />
+                <Text style={[S.modalRowText, { color: '#DC2626' }]}>Delete</Text>
+              </Pressable>
+            )}
           </View>
         </Pressable>
       </Modal>

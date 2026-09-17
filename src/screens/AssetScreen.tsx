@@ -8,6 +8,8 @@ import { BrandHeader, IconButton, StatusPill } from '@/components/Shared';
 import { useHapticFeedback } from '@/lib/haptics';
 import { supabase } from '@/lib/supabase';
 import { useHSEStore } from '@/lib/store';
+import { useRole } from '@/lib/useRole';
+import { requireAdmin } from '@/lib/requireAdmin';
 import { Toast } from '@/components/Toast';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import type { RootStackParamList } from '@/navigation/AppNavigation';
@@ -25,6 +27,7 @@ interface Asset {
 export default function AssetScreen({ navigation }: { navigation: NativeStackNavigationProp<RootStackParamList> }) {
   const haptics = useHapticFeedback();
   const { assets, loadAssets } = useHSEStore();
+  const { isAdmin } = useRole();
   const [loading, setLoading] = useState(true);
   const [quickAction, setQuickAction] = useState<Asset | null>(null);
   const [toast, setToast] = useState({ visible: false, msg: '', type: 'success' as 'success' | 'error' });
@@ -35,6 +38,8 @@ export default function AssetScreen({ navigation }: { navigation: NativeStackNav
   }, [loadAssets]));
 
   const handleDelete = async (asset: Asset) => {
+    const ok = await requireAdmin();
+    if (!ok) { setToast({ visible: true, msg: 'Admin access required to delete.', type: 'error' }); return; }
     haptics.impactMedium();
     setQuickAction(null);
     try {
@@ -84,7 +89,7 @@ export default function AssetScreen({ navigation }: { navigation: NativeStackNav
                 <Pressable
                   key={asset.id}
                   onPress={() => { haptics.impactMedium(); navigation.navigate('AssetDetail', { assetId: asset.id }); }}
-                  onLongPress={() => { haptics.impactMedium(); setQuickAction(asset); }}
+                  onLongPress={() => { if (isAdmin) { haptics.impactMedium(); setQuickAction(asset); } }}
                   style={({ pressed }) => [S.assetCard, i === assets.length - 1 && S.assetCardLast, pressed && S.cardPressed]}
                 >
                   <Image source={{ uri: asset.image_url || IMG.truck }} style={S.assetImage} />
@@ -122,13 +127,15 @@ export default function AssetScreen({ navigation }: { navigation: NativeStackNav
               <Pencil size={18} color="#0EA5E9" strokeWidth={2} />
               <Text style={S.modalRowText}>Edit</Text>
             </Pressable>
-            <Pressable
-              onPress={() => { if (quickAction) handleDelete(quickAction); }}
-              style={({ pressed }) => [S.modalRow, pressed && S.pressed]}
-            >
-              <Trash2 size={18} color="#DC2626" strokeWidth={2} />
-              <Text style={[S.modalRowText, { color: '#DC2626' }]}>Delete</Text>
-            </Pressable>
+            {isAdmin && (
+              <Pressable
+                onPress={() => { if (quickAction) handleDelete(quickAction); }}
+                style={({ pressed }) => [S.modalRow, pressed && S.pressed]}
+              >
+                <Trash2 size={18} color="#DC2626" strokeWidth={2} />
+                <Text style={[S.modalRowText, { color: '#DC2626' }]}>Delete</Text>
+              </Pressable>
+            )}
           </View>
         </Pressable>
       </Modal>
