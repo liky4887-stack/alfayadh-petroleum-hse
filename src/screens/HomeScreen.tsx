@@ -37,6 +37,7 @@ interface ActionItem {
   status: string;
   due_date: string | null;
   assignee: string | null;
+  updated_at?: string;
 }
 
 interface AssetItem {
@@ -53,7 +54,7 @@ export default function HomeScreen({ navigation }: { navigation: NativeStackNavi
   const haptics = useHapticFeedback();
   const t = useT();
   const { department, setDepartment } = useDepartment();
-  const { reports, loadReports } = useHSEStore();
+  const { reports, loadReports, assets: storeAssets, actions: storeActions, loadAssets, loadActions } = useHSEStore();
   const [showDeptModal, setShowDeptModal] = useState(false);
   const [actions, setActions] = useState<ActionItem[]>([]);
   const [assets, setAssets] = useState<AssetItem[]>([]);
@@ -66,22 +67,18 @@ export default function HomeScreen({ navigation }: { navigation: NativeStackNavi
   const loadData = useCallback(async () => {
     setLoading(true);
     try {
-      const [actionsRes, assetsRes] = await Promise.all([
-        supabase.from('actions').select('*').order('created_at', { ascending: false }).limit(20),
-        supabase.from('assets').select('*').order('created_at', { ascending: false }).limit(20),
-      ]);
-      if (actionsRes.data) setActions(actionsRes.data as ActionItem[]);
-      if (assetsRes.data) setAssets(assetsRes.data as AssetItem[]);
+      await Promise.all([loadAssets(), loadActions()]);
+      setActions(storeActions.slice(0, 20));
+      setAssets(storeAssets.slice(0, 20));
     } catch (err) {
       console.error('Home load error:', err);
     }
     setLoading(false);
-  }, []);
+  }, [loadAssets, loadActions, storeActions, storeAssets]);
 
   useFocusEffect(useCallback(() => {
-    loadReports();
     loadData();
-  }, [loadReports, loadData]));
+  }, [loadData]));
 
   const handleDeptSelect = (d: Department) => {
     haptics.impactMedium();
@@ -97,7 +94,11 @@ export default function HomeScreen({ navigation }: { navigation: NativeStackNavi
   });
 
   const activeActions = sortedActions.filter((a) => a.status === 'todo' || a.status === 'in_progress');
-  const completedToday = sortedActions.filter((a) => a.status === 'completed').length;
+  const completedToday = sortedActions.filter((a) => {
+    if (a.status !== 'completed') return false;
+    if (!a.updated_at) return false;
+    return a.updated_at.slice(0, 10) === new Date().toISOString().slice(0, 10);
+  }).length;
   const overdueActions = sortedActions.filter((a) => a.status !== 'completed' && a.due_date && new Date(a.due_date) < new Date()).length;
   const criticalCount = sortedActions.filter((a) => a.priority === 'Critical' && a.status !== 'completed').length;
 
@@ -107,34 +108,35 @@ export default function HomeScreen({ navigation }: { navigation: NativeStackNavi
   const deptPill = (
     <Pressable
       onPress={() => { haptics.impactMedium(); setShowDeptModal(true); }}
-      style={({ pressed }) => [s.deptPill, pressed && s.pressed]}
+      style={({ pressed }) => [S.deptPill, pressed && S.pressed]}
     >
-      <Text style={s.deptPillText} numberOfLines={1} ellipsizeMode="tail">{DEPT_SHORT[department]}</Text>
+      <Text style={S.deptPillText} numberOfLines={1} ellipsizeMode="tail">{DEPT_SHORT[department]}</Text>
     </Pressable>
   );
 
   return (
-    <SafeAreaView style={s.screen} edges={['top']}>
-      <ScrollView style={s.scroll} contentContainerStyle={s.scrollContent} showsVerticalScrollIndicator={false}>
+    <SafeAreaView style={S.screen} edges={['top']}>
+      <ScrollView style={S.scroll} contentContainerStyle={S.scrollContent} showsVerticalScrollIndicator={false}>
         <BrandHeader
           title="Home"
           right={
-            <View style={s.headerRight}>
+            <View style={S.headerRight}>
               {deptPill}
               <IconButton icon={<Bell size={22} color={C.inkSecondary} strokeWidth={1.8} />} onPress={() => { haptics.impactMedium(); navigation.navigate('Feed'); }} />
             </View>
           }
         />
-        <View style={s.body}>
+        <View style={S.body}>
           {loading ? (
-            <View style={s.loadingWrap}><ActivityIndicator size="large" color={C.accent} /></View>
+            <View style={S.loadingWrap}><ActivityIndicator size="large" color={C.accent} /></View>
           ) : (
             <>
               {department === 'safety' && (
                 <SafetyDashboard
                   t={t} haptics={haptics} navigation={navigation}
-                  safeCount={safeCount} unsafeCount={unsafeCount} openCount={openCount} total={reports.length}
                   activeActions={activeActions}
+                  activeAssets={activeAssets}
+                  completedToday={completedToday}
                 />
               )}
               {department === 'operations' && (
@@ -170,58 +172,58 @@ export default function HomeScreen({ navigation }: { navigation: NativeStackNavi
   );
 }
 
-function SafetyDashboard({ t, haptics, navigation, safeCount, unsafeCount, openCount, total, activeActions }: any) {
+function SafetyDashboard({ t, haptics, navigation, activeActions, activeAssets, completedToday }: any) {
   return (
     <>
-      <View style={s.actionRow}>
-        <OutlinedPillBtn label={t('reportSafe')} color="#16A34A" onPress={() => { haptics.impactMedium(); navigation.navigate('SafeReport'); }} />
-        <OutlinedPillBtn label={t('reportUnsafe')} color="#DC2626" onPress={() => { haptics.impactMedium(); navigation.navigate('UnsafeReport'); }} />
+      <View style={S.actionRow}>
+        <OutlinedPillBtn label="+ New Asset" color="#0EA5E9" onPress={() => { haptics.impactMedium(); navigation.navigate('NewAsset'); }} />
+        <OutlinedPillBtn label="+ New Action" color="#0EA5E9" onPress={() => { haptics.impactMedium(); navigation.navigate('NewAction'); }} />
       </View>
-      <View style={s.kpiRow}>
-        <KpiCard value={String(safeCount)} label={t('safeReports')} onPress={() => { haptics.impactMedium(); navigation.navigate('Actions', { filter: 'safe' }); }} />
-        <KpiCard value={String(unsafeCount)} label={t('unsafeReports')} onPress={() => { haptics.impactMedium(); navigation.navigate('Actions', { filter: 'unsafe' }); }} />
+      <View style={S.kpiRow}>
+        <KpiCard value={String(activeAssets)} label="Active Assets" onPress={() => { haptics.impactMedium(); navigation.navigate('Assets'); }} />
+        <KpiCard value={String(activeActions.length)} label="Active Actions" onPress={() => { haptics.impactMedium(); navigation.navigate('Actions'); }} />
       </View>
-      <View style={s.kpiRow}>
-        <KpiCard value={String(openCount)} label={t('openIssues')} onPress={() => { haptics.impactMedium(); navigation.navigate('Actions', { filter: 'open' }); }} />
-        <KpiCard value={String(total)} label={t('totalReports')} onPress={() => { haptics.impactMedium(); navigation.navigate('Actions', { filter: 'all' }); }} />
+      <View style={S.kpiRow}>
+        <KpiCard value={String(completedToday)} label="Completed" onPress={() => { haptics.impactMedium(); navigation.navigate('Actions'); }} />
+        <KpiCard value={String(activeActions.filter((a: ActionItem) => a.priority === 'Critical').length)} label="Critical" onPress={() => { haptics.impactMedium(); navigation.navigate('Actions'); }} />
       </View>
       <SectionLabel title={t('headsUp')} action={t('viewAll')} onAction={() => { haptics.impactMedium(); navigation.navigate('Feed'); }} />
-      <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={s.hStrip}>
-        <HeadsUpCard image={IMG.warehouse} tag="New stock delivered" author="Maria Murphy" status="Acknowledged" onPress={() => { haptics.impactMedium(); navigation.navigate('Media'); }} />
-        <HeadsUpCard image={IMG.wetFloor} tag="Heavy storms announced" author="Craig Tiley" status="Not viewed" danger onPress={() => { haptics.impactMedium(); navigation.navigate('Feed'); }} />
+      <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ paddingHorizontal: 20, gap: 12, paddingRight: 32 }}>
+        <HeadsUpCard image={IMG.warehouse} tag="SAFETY CAMPAIGN" title="New stock delivered" author="Maria Murphy" status="Acknowledged" onPress={() => { haptics.impactMedium(); navigation.navigate('Feed'); }} />
+        <HeadsUpCard image={IMG.wetFloor} tag="SAFETY ALERT" title="Heavy storms announced" author="Craig Tiley" status="Not viewed" danger onPress={() => { haptics.impactMedium(); navigation.navigate('Feed'); }} />
       </ScrollView>
-      <View style={s.sectionRow}>
-        <View style={s.sectionLabelRow}>
-          <Text style={s.sectionLabel}>{t('today')}</Text>
-          <View style={s.countBadge}><Text style={s.countBadgeText}>{activeActions.length}</Text></View>
+      <View style={S.sectionRow}>
+        <View style={S.sectionLabelRow}>
+          <Text style={S.sectionLabel}>{t('today')}</Text>
+          <View style={S.countBadge}><Text style={S.countBadgeText}>{activeActions.length}</Text></View>
         </View>
       </View>
       {activeActions.length > 0 ? (
-        <View style={s.taskList}>
+        <View style={S.taskList}>
           {activeActions.map((action: ActionItem, i: number) => (
             <Pressable
               key={action.id}
-              onPress={() => { haptics.impactMedium(); navigation.navigate('ReportDetail', { reportId: action.id }); }}
-              style={({ pressed }) => [s.taskRow, i === activeActions.length - 1 && s.taskRowLast, pressed && s.cardPressed]}
+              onPress={() => { haptics.impactMedium(); navigation.navigate('ActionDetail', { actionId: action.id }); }}
+              style={({ pressed }) => [S.taskRow, i === activeActions.length - 1 && S.taskRowLast, pressed && S.cardPressed]}
             >
-              <View style={s.taskRowTop}>
-                <View style={s.taskRowLeft}>
-                  <Text style={s.taskCategory}>{action.type ?? 'Action'}</Text>
-                  <Text style={s.taskTitle} numberOfLines={1}>{action.title}</Text>
+              <View style={S.taskRowTop}>
+                <View style={S.taskRowLeft}>
+                  <Text style={S.taskCategory}>{action.type ?? 'Action'}</Text>
+                  <Text style={S.taskTitle} numberOfLines={1}>{action.title}</Text>
                 </View>
                 <StatusPill label={action.priority ?? 'Low'} tone={PRIORITY_TONE[action.priority ?? 'Low'] ?? 'gray'} />
               </View>
-              <View style={s.taskMetaRow}>
-                <Text style={s.taskMeta}>{action.due_date ?? 'No due date'}</Text>
+              <View style={S.taskMetaRow}>
+                <Text style={S.taskMeta}>{action.due_date ?? 'No due date'}</Text>
                 <StatusPill label={action.status} tone={action.status === 'completed' ? 'green' : 'blue'} />
               </View>
             </Pressable>
           ))}
         </View>
       ) : (
-        <View style={s.emptyState}>
+        <View style={S.emptyState}>
           <CircleCheck size={36} color={C.faint} strokeWidth={1.5} />
-          <Text style={s.emptyText}>No active tasks. All caught up!</Text>
+          <Text style={S.emptyText}>No active tasks. All caught up!</Text>
         </View>
       )}
     </>
@@ -231,29 +233,29 @@ function SafetyDashboard({ t, haptics, navigation, safeCount, unsafeCount, openC
 function OperationsDashboard({ t, haptics, navigation, activeAssets, scheduledActions, overdueActions, completedToday, assets }: any) {
   return (
     <>
-      <View style={s.actionRow}>
+      <View style={S.actionRow}>
         <OutlinedPillBtn label={t('newAsset')} color="#0EA5E9" onPress={() => { haptics.impactMedium(); navigation.navigate('NewAsset'); }} />
         <OutlinedPillBtn label={t('newAction')} color="#0EA5E9" onPress={() => { haptics.impactMedium(); navigation.navigate('NewAction'); }} />
       </View>
-      <View style={s.kpiRow}>
+      <View style={S.kpiRow}>
         <KpiCard value={String(activeAssets)} label={t('activeAssets')} onPress={() => { haptics.impactMedium(); navigation.navigate('Assets'); }} />
         <KpiCard value={String(scheduledActions)} label={t('scheduledActions')} onPress={() => { haptics.impactMedium(); navigation.navigate('Actions'); }} />
       </View>
-      <View style={s.kpiRow}>
+      <View style={S.kpiRow}>
         <KpiCard value={String(overdueActions)} label={t('overdueActions')} onPress={() => { haptics.impactMedium(); navigation.navigate('Actions', { filter: 'open' }); }} />
         <KpiCard value={String(completedToday)} label={t('completedToday')} onPress={() => { haptics.impactMedium(); navigation.navigate('Actions'); }} />
       </View>
       <SectionLabel title="Active Assets" action={t('viewAll')} onAction={() => { haptics.impactMedium(); navigation.navigate('Assets'); }} />
       {assets.length > 0 ? (
-        <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={s.hStrip}>
+        <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={S.hStrip}>
           {assets.map((asset: AssetItem) => (
             <AssetCard key={asset.id} image={asset.image_url || IMG.truck} name={asset.name} location={asset.location ?? '—'} onPress={() => { haptics.impactMedium(); navigation.navigate('AssetDetail', { assetId: asset.id }); }} />
           ))}
         </ScrollView>
       ) : (
-        <View style={s.emptyState}>
+        <View style={S.emptyState}>
           <CircleCheck size={36} color={C.faint} strokeWidth={1.5} />
-          <Text style={s.emptyText}>No assets yet. Add one to get started.</Text>
+          <Text style={S.emptyText}>No assets yet. Add one to get started.</Text>
         </View>
       )}
     </>
@@ -263,45 +265,45 @@ function OperationsDashboard({ t, haptics, navigation, activeAssets, scheduledAc
 function MaintenanceDashboard({ t, haptics, navigation, maintenanceAssets, pendingChecks, criticalCount, completedThisWeek, activeActions }: any) {
   return (
     <>
-      <View style={s.actionRow}>
+      <View style={S.actionRow}>
         <OutlinedPillBtn label={t('logMaintenance')} color="#0EA5E9" onPress={() => { haptics.impactMedium(); navigation.navigate('NewAction'); }} />
-        <OutlinedPillBtn label={t('reportIssue')} color="#DC2626" onPress={() => { haptics.impactMedium(); navigation.navigate('UnsafeReport'); }} />
+        <OutlinedPillBtn label={t('newAsset')} color="#0EA5E9" onPress={() => { haptics.impactMedium(); navigation.navigate('NewAsset'); }} />
       </View>
-      <View style={s.kpiRow}>
+      <View style={S.kpiRow}>
         <KpiCard value={String(maintenanceAssets)} label={t('equipmentInMaintenance')} onPress={() => { haptics.impactMedium(); navigation.navigate('Assets'); }} />
         <KpiCard value={String(pendingChecks)} label={t('pendingChecks')} onPress={() => { haptics.impactMedium(); navigation.navigate('Actions'); }} />
       </View>
-      <View style={s.kpiRow}>
+      <View style={S.kpiRow}>
         <KpiCard value={String(criticalCount)} label={t('criticalPriority')} onPress={() => { haptics.impactMedium(); navigation.navigate('Actions', { filter: 'open' }); }} />
         <KpiCard value={String(completedThisWeek)} label={t('completedThisWeek')} onPress={() => { haptics.impactMedium(); navigation.navigate('Actions'); }} />
       </View>
       <SectionLabel title="Active Tasks" action={t('viewAll')} onAction={() => { haptics.impactMedium(); navigation.navigate('Actions'); }} />
       {activeActions.length > 0 ? (
-        <View style={s.taskList}>
+        <View style={S.taskList}>
           {activeActions.map((action: ActionItem, i: number) => (
             <Pressable
               key={action.id}
-              onPress={() => { haptics.impactMedium(); navigation.navigate('ReportDetail', { reportId: action.id }); }}
-              style={({ pressed }) => [s.taskRow, i === activeActions.length - 1 && s.taskRowLast, pressed && s.cardPressed]}
+              onPress={() => { haptics.impactMedium(); navigation.navigate('ActionDetail', { actionId: action.id }); }}
+              style={({ pressed }) => [S.taskRow, i === activeActions.length - 1 && S.taskRowLast, pressed && S.cardPressed]}
             >
-              <View style={s.taskRowTop}>
-                <View style={s.taskRowLeft}>
-                  <Text style={s.taskCategory}>{action.type ?? 'Action'}</Text>
-                  <Text style={s.taskTitle} numberOfLines={1}>{action.title}</Text>
+              <View style={S.taskRowTop}>
+                <View style={S.taskRowLeft}>
+                  <Text style={S.taskCategory}>{action.type ?? 'Action'}</Text>
+                  <Text style={S.taskTitle} numberOfLines={1}>{action.title}</Text>
                 </View>
                 <StatusPill label={action.priority ?? 'Low'} tone={PRIORITY_TONE[action.priority ?? 'Low'] ?? 'gray'} />
               </View>
-              <View style={s.taskMetaRow}>
-                <Text style={s.taskMeta}>{action.due_date ?? 'No due date'}</Text>
+              <View style={S.taskMetaRow}>
+                <Text style={S.taskMeta}>{action.due_date ?? 'No due date'}</Text>
                 <StatusPill label={action.status} tone={action.status === 'completed' ? 'green' : 'blue'} />
               </View>
             </Pressable>
           ))}
         </View>
       ) : (
-        <View style={s.emptyState}>
+        <View style={S.emptyState}>
           <CircleCheck size={36} color={C.faint} strokeWidth={1.5} />
-          <Text style={s.emptyText}>No pending maintenance tasks.</Text>
+          <Text style={S.emptyText}>No pending maintenance tasks.</Text>
         </View>
       )}
     </>
@@ -311,29 +313,29 @@ function MaintenanceDashboard({ t, haptics, navigation, maintenanceAssets, pendi
 function LogisticsDashboard({ t, haptics, navigation, fleetCount, inTransit, scheduledDeliveries, trainingDue, assets }: any) {
   return (
     <>
-      <View style={s.actionRow}>
+      <View style={S.actionRow}>
         <OutlinedPillBtn label={t('logTrip')} color="#0EA5E9" onPress={() => { haptics.impactMedium(); navigation.navigate('NewAction'); }} />
         <OutlinedPillBtn label={t('viewFleet')} color="#0EA5E9" onPress={() => { haptics.impactMedium(); navigation.navigate('Assets'); }} />
       </View>
-      <View style={s.kpiRow}>
+      <View style={S.kpiRow}>
         <KpiCard value={String(fleetCount)} label={t('vehiclesInFleet')} onPress={() => { haptics.impactMedium(); navigation.navigate('Assets'); }} />
         <KpiCard value={String(inTransit)} label={t('inTransit')} onPress={() => { haptics.impactMedium(); navigation.navigate('Actions'); }} />
       </View>
-      <View style={s.kpiRow}>
+      <View style={S.kpiRow}>
         <KpiCard value={String(scheduledDeliveries)} label={t('scheduledDeliveries')} onPress={() => { haptics.impactMedium(); navigation.navigate('Actions'); }} />
         <KpiCard value={String(trainingDue)} label={t('trainingDue')} onPress={() => { haptics.impactMedium(); navigation.navigate('Training'); }} />
       </View>
       <SectionLabel title="Fleet" action={t('viewAll')} onAction={() => { haptics.impactMedium(); navigation.navigate('Assets'); }} />
       {assets.length > 0 ? (
-        <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={s.hStrip}>
+        <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={S.hStrip}>
           {assets.map((asset: AssetItem) => (
             <AssetCard key={asset.id} image={asset.image_url || IMG.truck} name={asset.name} location={asset.location ?? '—'} onPress={() => { haptics.impactMedium(); navigation.navigate('AssetDetail', { assetId: asset.id }); }} />
           ))}
         </ScrollView>
       ) : (
-        <View style={s.emptyState}>
+        <View style={S.emptyState}>
           <CircleCheck size={36} color={C.faint} strokeWidth={1.5} />
-          <Text style={s.emptyText}>No vehicles in fleet yet.</Text>
+          <Text style={S.emptyText}>No vehicles in fleet yet.</Text>
         </View>
       )}
     </>
@@ -346,17 +348,17 @@ function DepartmentModal({ visible, onClose, onSelect, current }: { visible: boo
   const depts: Department[] = ['safety', 'operations', 'maintenance', 'logistics'];
   return (
     <Modal transparent animationType="fade" visible={visible} onRequestClose={onClose}>
-      <Pressable style={s.modalOverlay} onPress={onClose}>
-        <View style={s.modalCard}>
-          <Text style={s.modalTitle}>{t('selectDepartment')}</Text>
-          <Text style={s.modalSubtitle}>Choose the dashboard you want to view</Text>
+      <Pressable style={S.modalOverlay} onPress={onClose}>
+        <View style={S.modalCard}>
+          <Text style={S.modalTitle}>{t('selectDepartment')}</Text>
+          <Text style={S.modalSubtitle}>Choose the dashboard you want to view</Text>
           {depts.map((d) => (
             <Pressable
               key={d}
               onPress={() => { haptics.impactMedium(); onSelect(d); }}
-              style={({ pressed }) => [s.modalRow, current === d && s.modalRowActive, pressed && s.pressed]}
+              style={({ pressed }) => [S.modalRow, current === d && S.modalRowActive, pressed && S.pressed]}
             >
-              <Text style={[s.modalLabel, current === d && s.modalLabelActive]}>{DEPARTMENT_META[d].label}</Text>
+              <Text style={[S.modalLabel, current === d && S.modalLabelActive]}>{DEPARTMENT_META[d].label}</Text>
               <ChevronRight size={16} color="#94A3B8" strokeWidth={2} />
             </Pressable>
           ))}
@@ -368,33 +370,34 @@ function DepartmentModal({ visible, onClose, onSelect, current }: { visible: boo
 
 function OutlinedPillBtn({ label, color, onPress }: { label: string; color: string; onPress: () => void }) {
   return (
-    <Pressable onPress={onPress} style={({ pressed }) => [s.outlinedBtn, { borderColor: color }, pressed && s.pressed]}>
-      <Text style={[s.outlinedBtnText, { color }]}>{label}</Text>
+    <Pressable onPress={onPress} style={({ pressed }) => [S.outlinedBtn, { borderColor: color }, pressed && S.pressed]}>
+      <Text style={[S.outlinedBtnText, { color }]}>{label}</Text>
     </Pressable>
   );
 }
 
 function KpiCard({ value, label, onPress }: { value: string; label: string; onPress: () => void }) {
   return (
-    <Pressable onPress={onPress} style={({ pressed }) => [s.kpiCard, pressed && s.cardPressed]}>
-      <View style={s.kpiCopy}>
-        <Text style={s.kpiValue}>{value}</Text>
-        <Text style={s.kpiLabel}>{label}</Text>
+    <Pressable onPress={onPress} style={({ pressed }) => [S.kpiCard, pressed && S.cardPressed]}>
+      <View style={S.kpiCopy}>
+        <Text style={S.kpiValue}>{value}</Text>
+        <Text style={S.kpiLabel}>{label}</Text>
       </View>
       <ChevronRight size={18} color="#94A3B8" strokeWidth={2} />
     </Pressable>
   );
 }
 
-function HeadsUpCard({ image, tag, author, status, danger, onPress }: { image: string; tag: string; author: string; status: string; danger?: boolean; onPress: () => void }) {
+function HeadsUpCard({ image, tag, title, author, status, danger, onPress }: { image: string; tag: string; title?: string; author: string; status: string; danger?: boolean; onPress: () => void }) {
   return (
-    <Pressable onPress={onPress} style={({ pressed }) => [s.headsCard, pressed && s.cardPressed]}>
-      <Image source={{ uri: image }} style={s.headsImage} />
-      <View style={s.headsBody}>
-        <Text style={s.headsTag}>{tag}</Text>
-        <View style={s.headsFooter}>
+    <Pressable onPress={onPress} style={({ pressed }) => [S.headsCard, pressed && S.cardPressed]}>
+      <Image source={{ uri: image }} style={S.headsImage} />
+      <View style={S.headsBody}>
+        <Text style={S.headsTag}>{tag}</Text>
+        {title && <Text style={S.headsTitle} numberOfLines={2}>{title}</Text>}
+        <View style={S.headsFooter}>
           <Avatar initials={author === 'Maria Murphy' ? 'MM' : 'CT'} color={danger ? '#F3B7B2' : '#D3CCFF'} />
-          <Text style={s.headsAuthor} numberOfLines={1} ellipsizeMode="middle">{author}</Text>
+          <Text style={S.headsAuthor} numberOfLines={1} ellipsizeMode="middle">{author}</Text>
           <StatusPill label={status} tone={danger ? 'red' : 'green'} />
         </View>
       </View>
@@ -404,11 +407,11 @@ function HeadsUpCard({ image, tag, author, status, danger, onPress }: { image: s
 
 function AssetCard({ image, name, location, onPress }: { image: string; name: string; location: string; onPress: () => void }) {
   return (
-    <Pressable onPress={onPress} style={({ pressed }) => [s.headsCard, pressed && s.cardPressed]}>
-      <Image source={{ uri: image }} style={s.headsImage} />
-      <View style={s.headsBody}>
-        <Text style={s.headsTag}>{name}</Text>
-        <View style={s.headsFooter}>
+    <Pressable onPress={onPress} style={({ pressed }) => [S.headsCard, pressed && S.cardPressed]}>
+      <Image source={{ uri: image }} style={S.headsImage} />
+      <View style={S.headsBody}>
+        <Text style={S.headsTag}>{name}</Text>
+        <View style={S.headsFooter}>
           <StatusPill label={location} tone="blue" />
         </View>
       </View>
@@ -416,7 +419,7 @@ function AssetCard({ image, name, location, onPress }: { image: string; name: st
   );
 }
 
-const s = StyleSheet.create({
+const S = StyleSheet.create({
   screen: { flex: 1, backgroundColor: '#F8FAFC' },
   scroll: { flex: 1, backgroundColor: '#F8FAFC' },
   scrollContent: { paddingBottom: 110 },
@@ -448,10 +451,11 @@ const s = StyleSheet.create({
   taskMetaRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginTop: 6 },
   taskMeta: { fontSize: 13, fontWeight: '400', color: '#64748B' },
   hStrip: { paddingLeft: 20, paddingRight: 20, gap: 16 },
-  headsCard: { width: 280, backgroundColor: '#FFFFFF', borderRadius: 14, overflow: 'hidden', borderWidth: 1, borderColor: '#E5E7EB' },
+  headsCard: { width: 260, backgroundColor: '#FFFFFF', borderRadius: 14, overflow: 'hidden', borderWidth: 1, borderColor: '#E5E7EB' },
   headsImage: { width: '100%', height: 130 },
   headsBody: { padding: 16 },
-  headsTag: { fontSize: 16, fontWeight: '700', color: '#0F172A', letterSpacing: -0.2, minHeight: 44 },
+  headsTag: { fontSize: 10, fontWeight: '700', color: '#0EA5E9', letterSpacing: 0.4, textTransform: 'uppercase' },
+  headsTitle: { fontSize: 16, fontWeight: '700', color: '#0F172A', marginTop: 6, minHeight: 44 },
   headsFooter: { flexDirection: 'row', alignItems: 'center', gap: 8, marginTop: 14 },
   headsAuthor: { fontSize: 13, fontWeight: '500', color: '#64748B', flex: 1, minWidth: 0 },
   emptyState: { alignItems: 'center', paddingVertical: 40, gap: 12, paddingHorizontal: 20 },

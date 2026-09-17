@@ -6,8 +6,9 @@ import { theme } from '@/theme/theme';
 import { useHapticFeedback } from '@/lib/haptics';
 import { useConfirm } from '@/components/ConfirmDialog';
 import { Toast } from '@/components/Toast';
-import { ChevronLeft, Trash2, Pencil, CircleCheck } from '@/lib/icons';
+import { ChevronLeft, Trash2, Pencil, CircleCheck, LogOut } from '@/lib/icons';
 import { useT } from '@/lib/i18n';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 type TabKey = 'reports' | 'actions' | 'assets' | 'training' | 'users';
 
@@ -69,8 +70,21 @@ export default function AdminPanelScreen({ navigation }: { navigation: any }) {
   const handleEdit = (item: AdminRow) => {
     haptics.impactMedium();
     if (activeTab === 'reports') navigation.navigate('ReportDetail', { reportId: item.id });
+    else if (activeTab === 'actions') navigation.navigate('ActionDetail', { actionId: item.id });
+    else if (activeTab === 'assets') navigation.navigate('AssetDetail', { assetId: item.id });
+    else if (activeTab === 'training') navigation.navigate('CourseDetail', { courseId: item.id });
     else if (activeTab === 'users') setRoleModal({ userId: item.user_id, currentRole: item.role ?? 'employee' });
-    else navigation.navigate('NewAction');
+  };
+
+  const handleLogout = async () => {
+    haptics.impactMedium();
+    try {
+      await AsyncStorage.removeItem('admin_session');
+      await supabase.auth.signOut();
+      navigation.navigate('MainTabs');
+    } catch (err) {
+      console.error('Logout error:', err);
+    }
   };
 
   const handleRoleChange = async (newRole: string) => {
@@ -125,7 +139,9 @@ export default function AdminPanelScreen({ navigation }: { navigation: any }) {
           <Text style={S.backText}>{t('cancel')}</Text>
         </Pressable>
         <Text style={S.headerTitle}>{t('adminPanel')}</Text>
-        <View style={{ width: 70 }} />
+        <Pressable onPress={handleLogout} style={({ pressed }) => [S.logoutBtn, pressed && S.pressed]}>
+          <LogOut size={18} color={theme.danger} strokeWidth={2} />
+        </Pressable>
       </View>
       <View style={S.tabRow}>
         {TABS.map((tab) => (
@@ -190,6 +206,7 @@ const S = StyleSheet.create({
   deleteBtn: { width: 36, height: 36, borderRadius: 8, backgroundColor: theme.dangerLight, alignItems: 'center', justifyContent: 'center' },
   emptyWrap: { alignItems: 'center', paddingVertical: 60, gap: 12 },
   emptyText: { fontSize: 15, fontWeight: '600', color: theme.textDim },
+  logoutBtn: { width: 40, height: 40, borderRadius: 8, alignItems: 'center', justifyContent: 'center' },
   pressed: { opacity: 0.7 },
   modalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.5)', alignItems: 'center', justifyContent: 'center', padding: 24 },
   modalCard: { backgroundColor: theme.card, borderRadius: 16, padding: 20, width: '100%', gap: 8 },
