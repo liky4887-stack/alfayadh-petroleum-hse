@@ -34,7 +34,7 @@ export default function AdminScreen({ navigation }: { navigation: NativeStackNav
       }
     });
     const entries = Object.entries(counts).sort((a, b) => b[1] - a[1]).slice(0, 8);
-    const max = entries.length > 0 ? entries[0][1] : 1;
+    const max = entries.length > 0 ? (entries[0]?.[1] ?? 1) : 1;
     return entries.map(([dept, count]) => ({ dept, count, pct: Math.round((count / max) * 100) }));
   }, [reports]);
 
