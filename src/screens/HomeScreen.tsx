@@ -5,6 +5,7 @@ import { useFocusEffect } from '@react-navigation/native';
 import { Bell, ChevronRight, Plus, Tag, AlertTriangle, CircleCheck, Shield } from '@/lib/icons';
 import { C, IMG } from '@/theme/colors';
 import { BrandHeader, IconButton, Avatar, StatusPill, SectionLabel } from '@/components/Shared';
+import { PromoCarousel } from '@/components/PromoCarousel';
 import { useHapticFeedback } from '@/lib/haptics';
 import { useHSEStore } from '@/lib/store';
 import { useDepartment, DEPARTMENT_META, type Department } from '@/lib/department';
@@ -196,6 +197,10 @@ function SafetyDashboard({ t, haptics, navigation, activeActions, activeAssets, 
         <OutlinedPillBtn label="+ New Asset" color="#0EA5E9" onPress={() => { haptics.impactMedium(); navigation.navigate('NewAsset'); }} />
         <OutlinedPillBtn label="+ New Action" color="#0EA5E9" onPress={() => { haptics.impactMedium(); navigation.navigate('NewAction'); }} />
       </View>
+
+      <PromoCarousel
+        onPressCard={() => { haptics.impactMedium(); navigation.navigate('Feed'); }}
+      />
       <View style={S.kpiRow}>
         <KpiCard value={String(activeAssets)} label="Active Assets" onPress={() => { haptics.impactMedium(); navigation.navigate('Assets'); }} />
         <KpiCard value={String(activeActions.length)} label="Active Actions" onPress={() => { haptics.impactMedium(); navigation.navigate('Actions'); }} />
