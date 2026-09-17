@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { View, Text, Pressable, StyleSheet, FlatList, ActivityIndicator, ListRenderItem, Modal } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { supabase } from '@/lib/supabase';
-import { C } from '@/theme/colors';
+import { theme } from '@/theme/theme';
 import { useHapticFeedback } from '@/lib/haptics';
 import { useConfirm } from '@/components/ConfirmDialog';
 import { Toast } from '@/components/Toast';
@@ -29,10 +29,7 @@ const TABLE_MAP: Record<TabKey, string> = {
 
 const ROLES = ['admin', 'supervisor', 'employee'];
 
-interface AdminRow {
-  id: string;
-  [key: string]: any;
-}
+interface AdminRow { id: string; [key: string]: any; }
 
 export default function AdminPanelScreen({ navigation }: { navigation: any }) {
   const t = useT();
@@ -48,85 +45,42 @@ export default function AdminPanelScreen({ navigation }: { navigation: any }) {
     setLoading(true);
     try {
       const table = TABLE_MAP[tab];
-      const { data, error } = await supabase
-        .from(table)
-        .select('*')
-        .order('created_at', { ascending: false })
-        .limit(50);
-      if (error) {
-        console.error('Admin load error:', error);
-      }
+      const { data, error } = await supabase.from(table).select('*').order('created_at', { ascending: false }).limit(50);
+      if (error) console.error('Admin load error:', error);
       setRows((data ?? []) as AdminRow[]);
-    } catch (err) {
-      console.error('Admin load exception:', err);
-      setRows([]);
-    }
+    } catch (err) { console.error('Admin load exception:', err); setRows([]); }
     setLoading(false);
   }, []);
 
   useEffect(() => { loadTab(activeTab); }, [activeTab, loadTab]);
 
-  const showToast = (msg: string, type: 'success' | 'error' = 'success') => {
-    setToast({ visible: true, msg, type });
-  };
+  const showToast = (msg: string, type: 'success' | 'error' = 'success') => setToast({ visible: true, msg, type });
 
   const handleDelete = async (id: string) => {
-    const ok = await confirm({
-      title: 'Delete item?',
-      message: 'This action cannot be undone.',
-      confirmLabel: t('delete'),
-      destructive: true,
-    });
+    const ok = await confirm({ title: 'Delete item?', message: 'This action cannot be undone.', confirmLabel: t('delete'), destructive: true });
     if (!ok) return;
     try {
       const { error } = await supabase.from(TABLE_MAP[activeTab]).delete().eq(activeTab === 'users' ? 'user_id' : 'id', id);
-      if (error) {
-        console.error('Delete error:', error);
-        showToast(`Delete failed: ${error.message}`, 'error');
-        haptics.notificationError();
-        return;
-      }
-      haptics.notificationSuccess();
-      showToast('Item deleted');
-      loadTab(activeTab);
-    } catch (err) {
-      console.error('Delete exception:', err);
-      showToast('Delete failed', 'error');
-    }
+      if (error) { console.error('Delete error:', error); showToast(`Delete failed: ${error.message}`, 'error'); haptics.notificationError(); return; }
+      haptics.notificationSuccess(); showToast('Item deleted'); loadTab(activeTab);
+    } catch (err) { console.error('Delete exception:', err); showToast('Delete failed', 'error'); }
   };
 
   const handleEdit = (item: AdminRow) => {
     haptics.impactMedium();
-    if (activeTab === 'reports') {
-      navigation.navigate('ReportDetail', { reportId: item.id });
-    } else if (activeTab === 'users') {
-      setRoleModal({ userId: item.user_id, currentRole: item.role ?? 'employee' });
-    } else {
-      navigation.navigate('NewAction');
-    }
+    if (activeTab === 'reports') navigation.navigate('ReportDetail', { reportId: item.id });
+    else if (activeTab === 'users') setRoleModal({ userId: item.user_id, currentRole: item.role ?? 'employee' });
+    else navigation.navigate('NewAction');
   };
 
   const handleRoleChange = async (newRole: string) => {
     if (!roleModal) return;
     haptics.impactMedium();
     try {
-      const { error } = await supabase
-        .from('user_roles')
-        .update({ role: newRole })
-        .eq('user_id', roleModal.userId);
-      if (error) {
-        console.error('Role update error:', error);
-        showToast(`Failed: ${error.message}`, 'error');
-        haptics.notificationError();
-      } else {
-        haptics.notificationSuccess();
-        showToast('Role updated');
-        loadTab('users');
-      }
-    } catch (err) {
-      console.error('Role update exception:', err);
-      showToast('Failed to update role', 'error');
-    }
+      const { error } = await supabase.from('user_roles').update({ role: newRole }).eq('user_id', roleModal.userId);
+      if (error) { console.error('Role update error:', error); showToast(`Failed: ${error.message}`, 'error'); haptics.notificationError(); }
+      else { haptics.notificationSuccess(); showToast('Role updated'); loadTab('users'); }
+    } catch (err) { console.error('Role update exception:', err); showToast('Failed to update role', 'error'); }
     setRoleModal(null);
   };
 
@@ -155,13 +109,10 @@ export default function AdminPanelScreen({ navigation }: { navigation: any }) {
         <Text style={S.rowSub}>{getRowSubtitle(item)}</Text>
       </Pressable>
       <Pressable onPress={() => handleEdit(item)} style={({ pressed }) => [S.editBtn, pressed && S.pressed]}>
-        <Pencil size={15} color={C.accent} strokeWidth={2} />
+        <Pencil size={15} color={theme.primary} strokeWidth={2} />
       </Pressable>
-      <Pressable
-        onPress={() => handleDelete(activeTab === 'users' ? item.user_id : item.id)}
-        style={({ pressed }) => [S.deleteBtn, pressed && S.pressed]}
-      >
-        <Trash2 size={15} color={C.red} strokeWidth={2} />
+      <Pressable onPress={() => handleDelete(activeTab === 'users' ? item.user_id : item.id)} style={({ pressed }) => [S.deleteBtn, pressed && S.pressed]}>
+        <Trash2 size={15} color={theme.danger} strokeWidth={2} />
       </Pressable>
     </View>
   );
@@ -170,7 +121,7 @@ export default function AdminPanelScreen({ navigation }: { navigation: any }) {
     <SafeAreaView style={S.screen} edges={['top']}>
       <View style={S.header}>
         <Pressable onPress={() => { haptics.impactMedium(); navigation.goBack(); }} style={({ pressed }) => [S.backBtn, pressed && S.pressed]}>
-          <ChevronLeft size={20} color={C.ink} />
+          <ChevronLeft size={20} color={theme.text} />
           <Text style={S.backText}>{t('cancel')}</Text>
         </Pressable>
         <Text style={S.headerTitle}>{t('adminPanel')}</Text>
@@ -178,17 +129,13 @@ export default function AdminPanelScreen({ navigation }: { navigation: any }) {
       </View>
       <View style={S.tabRow}>
         {TABS.map((tab) => (
-          <Pressable
-            key={tab.key}
-            onPress={() => { haptics.impactMedium(); setActiveTab(tab.key); }}
-            style={({ pressed }) => [S.tab, activeTab === tab.key && S.tabActive, pressed && S.pressed]}
-          >
+          <Pressable key={tab.key} onPress={() => { haptics.impactMedium(); setActiveTab(tab.key); }} style={({ pressed }) => [S.tab, activeTab === tab.key && S.tabActive, pressed && S.pressed]}>
             <Text style={[S.tabText, activeTab === tab.key && S.tabTextActive]}>{tab.label}</Text>
           </Pressable>
         ))}
       </View>
       {loading ? (
-        <View style={S.loadingWrap}><ActivityIndicator size="large" color={C.accent} /></View>
+        <View style={S.loadingWrap}><ActivityIndicator size="large" color={theme.primary} /></View>
       ) : (
         <FlatList
           data={rows}
@@ -197,7 +144,7 @@ export default function AdminPanelScreen({ navigation }: { navigation: any }) {
           contentContainerStyle={S.list}
           ListEmptyComponent={
             <View style={S.emptyWrap}>
-              <CircleCheck size={40} color={C.faint} strokeWidth={1.5} />
+              <CircleCheck size={40} color={theme.textFaint} strokeWidth={1.5} />
               <Text style={S.emptyText}>No items found</Text>
             </View>
           }
@@ -210,13 +157,9 @@ export default function AdminPanelScreen({ navigation }: { navigation: any }) {
           <View style={S.modalCard}>
             <Text style={S.modalTitle}>Change Role</Text>
             {ROLES.map((r) => (
-              <Pressable
-                key={r}
-                onPress={() => handleRoleChange(r)}
-                style={({ pressed }) => [S.modalRow, roleModal?.currentRole === r && S.modalRowActive, pressed && S.pressed]}
-              >
+              <Pressable key={r} onPress={() => handleRoleChange(r)} style={({ pressed }) => [S.modalRow, roleModal?.currentRole === r && S.modalRowActive, pressed && S.pressed]}>
                 <Text style={[S.modalRowText, roleModal?.currentRole === r && S.modalRowTextActive]}>{r}</Text>
-                {roleModal?.currentRole === r && <CircleCheck size={18} color={C.accent} strokeWidth={2} />}
+                {roleModal?.currentRole === r && <CircleCheck size={18} color={theme.primary} strokeWidth={2} />}
               </Pressable>
             ))}
           </View>
@@ -227,32 +170,32 @@ export default function AdminPanelScreen({ navigation }: { navigation: any }) {
 }
 
 const S = StyleSheet.create({
-  screen: { flex: 1, backgroundColor: C.canvas },
-  header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 16, paddingVertical: 14, backgroundColor: '#FFF', borderBottomWidth: 1, borderBottomColor: C.border },
+  screen: { flex: 1, backgroundColor: theme.bg },
+  header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 16, paddingVertical: 14, backgroundColor: theme.card, borderBottomWidth: 1, borderBottomColor: theme.border },
   backBtn: { flexDirection: 'row', alignItems: 'center', gap: 4 },
-  backText: { fontSize: 15, fontWeight: '600', color: C.ink },
-  headerTitle: { fontSize: 17, fontWeight: '800', color: C.ink, flex: 1, textAlign: 'center' },
-  tabRow: { flexDirection: 'row', gap: 6, paddingHorizontal: 12, paddingVertical: 12, backgroundColor: '#FFF', borderBottomWidth: 1, borderBottomColor: C.border },
-  tab: { paddingVertical: 8, paddingHorizontal: 10, borderRadius: 8, borderWidth: 1, borderColor: C.border, backgroundColor: '#FFF' },
-  tabActive: { backgroundColor: C.accent, borderColor: C.accent },
-  tabText: { fontSize: 12, fontWeight: '600', color: C.muted },
+  backText: { fontSize: 15, fontWeight: '600', color: theme.text },
+  headerTitle: { fontSize: 17, fontWeight: '800', color: theme.text, flex: 1, textAlign: 'center' },
+  tabRow: { flexDirection: 'row', gap: 6, paddingHorizontal: 12, paddingVertical: 12, backgroundColor: theme.card, borderBottomWidth: 1, borderBottomColor: theme.border },
+  tab: { paddingVertical: 8, paddingHorizontal: 10, borderRadius: 8, borderWidth: 1, borderColor: theme.border, backgroundColor: theme.card },
+  tabActive: { backgroundColor: theme.primary, borderColor: theme.primary },
+  tabText: { fontSize: 12, fontWeight: '600', color: theme.textDim },
   tabTextActive: { color: '#FFF', fontWeight: '700' },
   loadingWrap: { flex: 1, alignItems: 'center', justifyContent: 'center' },
   list: { paddingHorizontal: 16, paddingBottom: 100, paddingTop: 12 },
-  row: { flexDirection: 'row', alignItems: 'center', gap: 10, backgroundColor: '#FFF', borderRadius: 12, padding: 14, borderWidth: 1, borderColor: C.border, marginBottom: 8 },
+  row: { flexDirection: 'row', alignItems: 'center', gap: 10, backgroundColor: theme.card, borderRadius: 12, padding: 14, borderWidth: 1, borderColor: theme.border, marginBottom: 8 },
   rowInfo: { flex: 1, minWidth: 0 },
-  rowTitle: { fontSize: 15, fontWeight: '700', color: C.ink },
-  rowSub: { fontSize: 12, fontWeight: '500', color: C.muted, marginTop: 2 },
-  editBtn: { width: 36, height: 36, borderRadius: 8, backgroundColor: C.accentSoft, alignItems: 'center', justifyContent: 'center' },
-  deleteBtn: { width: 36, height: 36, borderRadius: 8, backgroundColor: C.redBg, alignItems: 'center', justifyContent: 'center' },
+  rowTitle: { fontSize: 15, fontWeight: '700', color: theme.text },
+  rowSub: { fontSize: 12, fontWeight: '500', color: theme.textDim, marginTop: 2 },
+  editBtn: { width: 36, height: 36, borderRadius: 8, backgroundColor: theme.primaryLight, alignItems: 'center', justifyContent: 'center' },
+  deleteBtn: { width: 36, height: 36, borderRadius: 8, backgroundColor: theme.dangerLight, alignItems: 'center', justifyContent: 'center' },
   emptyWrap: { alignItems: 'center', paddingVertical: 60, gap: 12 },
-  emptyText: { fontSize: 15, fontWeight: '600', color: C.muted },
+  emptyText: { fontSize: 15, fontWeight: '600', color: theme.textDim },
   pressed: { opacity: 0.7 },
   modalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.5)', alignItems: 'center', justifyContent: 'center', padding: 24 },
-  modalCard: { backgroundColor: '#FFF', borderRadius: 16, padding: 20, width: '100%', gap: 8 },
-  modalTitle: { fontSize: 18, fontWeight: '800', color: C.ink, marginBottom: 12 },
-  modalRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingVertical: 14, paddingHorizontal: 12, borderRadius: 12, borderWidth: 1, borderColor: C.border },
-  modalRowActive: { borderColor: C.accent, backgroundColor: C.accentSoft },
-  modalRowText: { fontSize: 16, fontWeight: '600', color: C.ink, textTransform: 'capitalize' },
-  modalRowTextActive: { fontWeight: '800', color: C.accent },
+  modalCard: { backgroundColor: theme.card, borderRadius: 16, padding: 20, width: '100%', gap: 8 },
+  modalTitle: { fontSize: 18, fontWeight: '800', color: theme.text, marginBottom: 12 },
+  modalRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingVertical: 14, paddingHorizontal: 12, borderRadius: 12, borderWidth: 1, borderColor: theme.border },
+  modalRowActive: { borderColor: theme.primary, backgroundColor: theme.primaryLight },
+  modalRowText: { fontSize: 16, fontWeight: '600', color: theme.text, textTransform: 'capitalize' },
+  modalRowTextActive: { fontWeight: '800', color: theme.primary },
 });
