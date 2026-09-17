@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { View, Text, ScrollView, Pressable, StyleSheet, TextInput as RNTextInput, Modal, FlatList, ActivityIndicator } from 'react-native';
+import { View, Text, ScrollView, Pressable, StyleSheet, TextInput as RNTextInput, Modal, FlatList, ActivityIndicator, Image } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import * as ImagePicker from 'expo-image-picker';
 import { ChevronLeft, Check, Link2, ClipboardCheck, Camera } from '@/lib/icons';
@@ -208,9 +208,11 @@ export default function NewActionScreen({ navigation, route }: { navigation: Nat
           <Field label="Photo (optional)">
             <Pressable onPress={pickImage} style={({ pressed }) => [S.imagePicker, pressed && S.btnPressed]}>
               {imageUri ? (
-                <View style={S.previewWrap}>
-                  <Text style={S.previewText}>Image selected</Text>
-                </View>
+                <Image
+                  source={{ uri: imageUri }}
+                  style={{ width: '100%', height: 200, borderRadius: 12 }}
+                  resizeMode="cover"
+                />
               ) : (
                 <View style={S.imagePlaceholder}>
                   <Camera size={28} color={C.mutedLight} strokeWidth={1.5} />
