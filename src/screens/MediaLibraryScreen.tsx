@@ -24,7 +24,7 @@ export default function MediaLibraryScreen({ navigation }: { navigation: NativeS
 
   const pickImage = async () => {
     haptics.impactMedium();
-    const { status } = await ImagePicker.requestCameraRollPermissionsAsync();
+    const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
     if (status !== 'granted') {
       setToast({ visible: true, msg: 'Permission required to access photos' });
       return;

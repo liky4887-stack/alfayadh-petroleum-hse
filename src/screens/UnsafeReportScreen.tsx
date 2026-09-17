@@ -47,7 +47,7 @@ export default function UnsafeReportScreen({ navigation }: { navigation: NativeS
 
   const handleImage = async () => {
     haptics.impactMedium();
-    const { status } = await ImagePicker.requestCameraRollPermissionsAsync();
+    const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
     if (status !== 'granted') { Alert.alert('Permission needed', 'Photo access is required to attach images.'); return; }
     const result = await ImagePicker.launchImageLibraryAsync({ mediaTypes: ['images'], quality: 0.8 });
     if (!result.cancelled && result.uri) { setImageUri(result.uri); haptics.notificationSuccess(); }

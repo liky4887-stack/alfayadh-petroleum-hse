@@ -24,7 +24,7 @@ export default function NewCourseScreen({ navigation }: { navigation: NativeStac
 
   const pickImage = async () => {
     haptics.impactMedium();
-    const { status } = await ImagePicker.requestCameraRollPermissionsAsync();
+    const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
     if (status !== 'granted') {
       setError('Photo library permission is required.');
       return;

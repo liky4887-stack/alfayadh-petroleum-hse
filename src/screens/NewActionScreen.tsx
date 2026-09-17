@@ -73,12 +73,12 @@ export default function NewActionScreen({ navigation, route }: { navigation: Nat
   const pickImage = async () => {
     haptics.impactMedium();
     try {
-      const { status } = await ImagePicker.requestCameraRollPermissionsAsync();
+      const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
       if (status !== 'granted') {
         setToast({ visible: true, msg: 'Permission required to access photos', type: 'error' });
         return;
       }
-      const result = await ImagePicker.launchImageLibraryAsync({ mediaTypes: ImagePicker.MediaTypeOptions.Images, quality: 0.8 });
+      const result = await ImagePicker.launchImageLibraryAsync({ mediaTypes: ['images'], quality: 0.8 });
       if (!result.cancelled && result.uri) {
         setImageUri(result.uri);
       }
