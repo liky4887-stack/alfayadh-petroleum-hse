@@ -1,5 +1,5 @@
 import { Pressable, StyleSheet, Text, View } from 'react-native';
-import { ChevronRight, MoreHorizontal, Filter, Bell, X } from 'lucide-react';
+import { ChevronRight, MoreHorizontal, Filter, Bell, X } from '@/lib/icons';
 import { C } from '@/theme/colors';
 import { useHapticFeedback } from '@/lib/haptics';
 import type { ReactNode } from 'react';

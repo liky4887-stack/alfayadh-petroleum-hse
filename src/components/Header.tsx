@@ -1,5 +1,5 @@
 import { Pressable, StyleSheet, Text, View } from 'react-native';
-import { ArrowLeft, BarChart3 } from 'lucide-react';
+import { ArrowLeft, BarChart3 } from '@/lib/icons';
 import { Dark } from '@/theme/colors';
 import { useHSEStore } from '@/lib/store';
 import { useHapticFeedback } from '@/lib/haptics';

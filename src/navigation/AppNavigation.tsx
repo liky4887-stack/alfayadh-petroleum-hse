@@ -39,7 +39,7 @@ import {
   GraduationCap,
   MoreHorizontal,
 } from '@/lib/icons';
-import type { LucideIcon } from 'lucide-react';
+import type { LucideIcon } from '@/lib/icons';
 
 export type RootStackParamList = {
   Login: undefined;
