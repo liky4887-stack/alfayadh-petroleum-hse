@@ -68,13 +68,14 @@ export default function HomeScreen({ navigation }: { navigation: NativeStackNavi
     setLoading(true);
     try {
       await Promise.all([loadAssets(), loadActions()]);
-      setActions(storeActions.slice(0, 20));
-      setAssets(storeAssets.slice(0, 20));
+      const fresh = useHSEStore.getState();
+      setActions((fresh.actions ?? []).slice(0, 20));
+      setAssets((fresh.assets ?? []).slice(0, 20));
     } catch (err) {
       console.error('Home load error:', err);
     }
     setLoading(false);
-  }, [loadAssets, loadActions, storeActions, storeAssets]);
+  }, [loadAssets, loadActions]);
 
   useFocusEffect(useCallback(() => {
     loadData();
