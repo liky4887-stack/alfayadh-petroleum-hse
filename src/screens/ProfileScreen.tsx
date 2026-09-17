@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { View, Text, ScrollView, Pressable, StyleSheet, TextInput as RNTextInput } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { ChevronRight, Check, UserRound } from '@/lib/icons';
+import { ChevronLeft, Check, UserRound } from '@/lib/icons';
 import { C } from '@/theme/colors';
 import { useHapticFeedback } from '@/lib/haptics';
 import { Toast } from '@/components/Toast';
@@ -72,7 +72,7 @@ export default function ProfileScreen({ navigation }: { navigation: NativeStackN
     <SafeAreaView style={S.screen} edges={['top']}>
       <View style={S.header}>
         <Pressable onPress={() => { haptics.impactMedium(); navigation.goBack(); }} style={S.backBtn}>
-          <ChevronRight size={22} color={C.ink} />
+          <ChevronLeft size={22} color={C.ink} />
           <Text style={S.backText}>Back</Text>
         </Pressable>
         <Text style={S.headerTitle}>Profile</Text>
