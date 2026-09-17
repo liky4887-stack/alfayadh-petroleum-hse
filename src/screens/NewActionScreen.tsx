@@ -1,7 +1,7 @@
-import { useState } from 'react';
-import { View, Text, ScrollView, Pressable, StyleSheet, TextInput as RNTextInput } from 'react-native';
+import { useState, useEffect } from 'react';
+import { View, Text, ScrollView, Pressable, StyleSheet, TextInput as RNTextInput, Modal, FlatList, ActivityIndicator } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { ChevronRight, Check } from '@/lib/icons';
+import { ChevronRight, Check, Link2, ClipboardCheck } from '@/lib/icons';
 import { C } from '@/theme/colors';
 import { supabase } from '@/lib/supabase';
 import { useHapticFeedback } from '@/lib/haptics';
@@ -12,6 +12,12 @@ import type { RootStackParamList } from '@/navigation/AppNavigation';
 const TYPES = ['Inspection', 'Action', 'Maintenance', 'Training'];
 const PRIORITIES = ['Low', 'Medium', 'High', 'Critical'];
 
+interface Asset {
+  id: string;
+  asset_code: string;
+  name: string;
+}
+
 export default function NewActionScreen({ navigation }: { navigation: NativeStackNavigationProp<RootStackParamList> }) {
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
@@ -19,10 +25,20 @@ export default function NewActionScreen({ navigation }: { navigation: NativeStac
   const [priority, setPriority] = useState<string | null>(null);
   const [assignee, setAssignee] = useState('');
   const [dueDate, setDueDate] = useState('');
+  const [assetId, setAssetId] = useState<string | null>(null);
+  const [assetName, setAssetName] = useState<string | null>(null);
+  const [assets, setAssets] = useState<Asset[]>([]);
+  const [assetPickerVisible, setAssetPickerVisible] = useState(false);
   const [saving, setSaving] = useState(false);
   const [toast, setToast] = useState({ visible: false, msg: '' });
   const [errors, setErrors] = useState<Record<string, string>>({});
   const haptics = useHapticFeedback();
+
+  useEffect(() => {
+    supabase.from('assets').select('id, asset_code, name').order('name', { ascending: true }).then(({ data }) => {
+      if (data) setAssets(data as Asset[]);
+    });
+  }, []);
 
   const validate = () => {
     const e: Record<string, string> = {};
@@ -40,11 +56,11 @@ export default function NewActionScreen({ navigation }: { navigation: NativeStac
     const { error } = await supabase.from('actions').insert({
       title: title.trim(),
       description: description.trim() || null,
-      type,
-      priority,
+      type, priority,
       assignee: assignee.trim() || null,
       due_date: dueDate.trim() || null,
       status: 'todo',
+      asset_id: assetId,
     });
     setSaving(false);
     if (error) {
@@ -55,6 +71,13 @@ export default function NewActionScreen({ navigation }: { navigation: NativeStac
     haptics.notificationSuccess();
     setToast({ visible: true, msg: 'Action created successfully' });
     setTimeout(() => navigation.goBack(), 1200);
+  };
+
+  const selectAsset = (asset: Asset) => {
+    haptics.impactMedium();
+    setAssetId(asset.id);
+    setAssetName(`${asset.name} (${asset.asset_code})`);
+    setAssetPickerVisible(false);
   };
 
   return (
@@ -81,6 +104,15 @@ export default function NewActionScreen({ navigation }: { navigation: NativeStac
           <Field label="Priority" required error={errors.priority}>
             <ChipRow options={PRIORITIES} selected={priority} onSelect={(v) => { haptics.selection(); setPriority(v); }} />
           </Field>
+          <Field label="Related Asset">
+            <Pressable
+              onPress={() => { haptics.impactMedium(); setAssetPickerVisible(true); }}
+              style={({ pressed }) => [S.assetPicker, pressed && S.btnPressed]}
+            >
+              <Link2 size={18} color={assetId ? C.accent : C.mutedLight} strokeWidth={2} />
+              <Text style={[S.assetPickerText, assetId ? { color: C.ink } : null]}>{assetName ?? 'Link an asset (optional)'}</Text>
+            </Pressable>
+          </Field>
           <Field label="Assignee">
             <Input value={assignee} onChangeText={setAssignee} placeholder="Assign to..." />
           </Field>
@@ -99,6 +131,28 @@ export default function NewActionScreen({ navigation }: { navigation: NativeStac
         </Pressable>
       </View>
       <Toast message={toast.msg} type="success" visible={toast.visible} onHide={() => setToast({ visible: false, msg: '' })} />
+      <Modal transparent animationType="fade" visible={assetPickerVisible} onRequestClose={() => setAssetPickerVisible(false)}>
+        <Pressable style={S.modalOverlay} onPress={() => setAssetPickerVisible(false)}>
+          <View style={S.modalCard}>
+            <Text style={S.modalTitle}>Select Asset</Text>
+            <FlatList
+              data={assets}
+              keyExtractor={(item) => item.id}
+              renderItem={({ item }) => (
+                <Pressable onPress={() => selectAsset(item)} style={({ pressed }) => [S.modalRow, pressed && S.btnPressed]}>
+                  <ClipboardCheck size={18} color={C.accent} strokeWidth={2} />
+                  <View style={S.modalRowInfo}>
+                    <Text style={S.modalRowTitle}>{item.name}</Text>
+                    <Text style={S.modalRowSub}>{item.asset_code}</Text>
+                  </View>
+                </Pressable>
+              )}
+              style={{ maxHeight: 350 }}
+              ListEmptyComponent={<Text style={S.modalEmpty}>No assets found</Text>}
+            />
+          </View>
+        </Pressable>
+      </Modal>
     </SafeAreaView>
   );
 }
@@ -159,6 +213,8 @@ const S = StyleSheet.create({
   inputWrap: { borderWidth: 1, borderColor: C.borderLight, borderRadius: 12, backgroundColor: '#FFF', paddingHorizontal: 14, minHeight: 50, justifyContent: 'center' },
   inputWrapMulti: { minHeight: 100, alignItems: 'stretch' },
   input: { fontSize: 15, color: C.ink, paddingVertical: 14 },
+  assetPicker: { flexDirection: 'row', alignItems: 'center', gap: 10, borderWidth: 1, borderColor: C.borderLight, borderRadius: 12, backgroundColor: '#FFF', paddingHorizontal: 14, paddingVertical: 14, minHeight: 50 },
+  assetPickerText: { fontSize: 15, fontWeight: '500', color: C.mutedLight },
   chipRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 10 },
   chip: { paddingVertical: 10, paddingHorizontal: 16, borderRadius: 10, borderWidth: 1, borderColor: C.borderLight, backgroundColor: '#FFF' },
   chipSelected: { borderColor: C.primary, backgroundColor: C.primarySoft },
@@ -171,4 +227,12 @@ const S = StyleSheet.create({
   saveText: { fontSize: 16, fontWeight: '700', color: '#FFF' },
   btnPressed: { opacity: 0.85 },
   btnDisabled: { opacity: 0.5 },
+  modalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.5)', alignItems: 'center', justifyContent: 'center', padding: 24 },
+  modalCard: { backgroundColor: '#FFF', borderRadius: 16, padding: 20, width: '100%' },
+  modalTitle: { fontSize: 18, fontWeight: '800', color: C.ink, marginBottom: 14 },
+  modalRow: { flexDirection: 'row', alignItems: 'center', gap: 12, paddingVertical: 14, borderBottomWidth: 1, borderBottomColor: C.border },
+  modalRowInfo: { flex: 1 },
+  modalRowTitle: { fontSize: 15, fontWeight: '700', color: C.ink },
+  modalRowSub: { fontSize: 12, fontWeight: '500', color: C.muted, marginTop: 2 },
+  modalEmpty: { fontSize: 14, fontWeight: '600', color: C.muted, textAlign: 'center', paddingVertical: 20 },
 });

@@ -23,6 +23,16 @@ CREATE TABLE IF NOT EXISTS actions (
   assignee text,
   due_date date,
   status text DEFAULT 'todo',
+  asset_id uuid REFERENCES assets(id) ON DELETE SET NULL,
+  created_at timestamptz DEFAULT now()
+);
+
+-- 1c. user_roles (admin-only auth)
+CREATE TABLE IF NOT EXISTS user_roles (
+  user_id uuid PRIMARY KEY REFERENCES auth.users(id) ON DELETE CASCADE,
+  role text DEFAULT 'employee' CHECK (role IN ('admin', 'supervisor', 'employee')),
+  department text,
+  full_name text,
   created_at timestamptz DEFAULT now()
 );
 
@@ -124,6 +134,7 @@ ALTER TABLE enrollments ENABLE ROW LEVEL SECURITY;
 ALTER TABLE quiz_questions ENABLE ROW LEVEL SECURITY;
 ALTER TABLE feeds ENABLE ROW LEVEL SECURITY;
 ALTER TABLE feed_comments ENABLE ROW LEVEL SECURITY;
+ALTER TABLE user_roles ENABLE ROW LEVEL SECURITY;
 
 -- Permissive policies (anon + authenticated)
 CREATE POLICY "allow_all_assets" ON assets FOR ALL TO anon, authenticated USING (true) WITH CHECK (true);
@@ -163,6 +174,11 @@ CREATE POLICY "anon_select_comments" ON feed_comments FOR SELECT TO anon, authen
 CREATE POLICY "anon_insert_comments" ON feed_comments FOR INSERT TO anon, authenticated WITH CHECK (true);
 CREATE POLICY "anon_update_comments" ON feed_comments FOR UPDATE TO anon, authenticated USING (true) WITH CHECK (true);
 CREATE POLICY "anon_delete_comments" ON feed_comments FOR DELETE TO anon, authenticated USING (true);
+
+-- user_roles: users can read their own role
+CREATE POLICY "user_read_own_role" ON user_roles FOR SELECT TO authenticated USING (auth.uid() = user_id);
+CREATE POLICY "user_insert_own_role" ON user_roles FOR INSERT TO authenticated WITH CHECK (auth.uid() = user_id);
+CREATE POLICY "user_update_own_role" ON user_roles FOR UPDATE TO authenticated USING (auth.uid() = user_id) WITH CHECK (auth.uid() = user_id);
 
 -- Enable Realtime
 ALTER PUBLICATION supabase_realtime ADD TABLE hse_reports;

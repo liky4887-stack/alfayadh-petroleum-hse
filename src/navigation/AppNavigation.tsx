@@ -1,9 +1,11 @@
+import { useState, useEffect } from 'react';
 import { NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
-import { StyleSheet } from 'react-native';
+import { StyleSheet, ActivityIndicator, View } from 'react-native';
 import { C } from '@/theme/colors';
 import { useHapticFeedback } from '@/lib/haptics';
+import { supabase } from '@/lib/supabase';
 
 import HomeScreen from '@/screens/HomeScreen';
 import AssetScreen from '@/screens/AssetScreen';
@@ -25,6 +27,9 @@ import TrainingManageScreen from '@/screens/TrainingManageScreen';
 import NewCourseScreen from '@/screens/NewCourseScreen';
 import CourseDetailScreen from '@/screens/CourseDetailScreen';
 import ReportDetailScreen from '@/screens/ReportDetailScreen';
+import LoginScreen from '@/screens/LoginScreen';
+import AdminGateScreen from '@/screens/AdminGateScreen';
+import AdminPanelScreen from '@/screens/AdminPanelScreen';
 
 import {
   UserRound,
@@ -53,6 +58,8 @@ export type RootStackParamList = {
   CourseDetail: { courseId: string } | undefined;
   ReportDetail: { reportId: string } | undefined;
   Actions: { filter?: string } | undefined;
+  AdminGate: undefined;
+  AdminPanel: undefined;
 };
 
 export type TabParamList = {
@@ -75,6 +82,7 @@ function TabIcon({ name, color, size }: { name: string; color: string; size: num
     More: MoreHorizontal,
   };
   const Icon = icons[name];
+  if (!Icon) return null;
   return <Icon color={color} size={size} strokeWidth={1.8} />;
 }
 
@@ -104,31 +112,68 @@ function MainTabs() {
 }
 
 export default function Navigation() {
+  const [session, setSession] = useState<boolean | null>(null);
+
+  useEffect(() => {
+    let mounted = true;
+    (async () => {
+      try {
+        const { data } = await supabase.auth.getSession();
+        if (mounted) setSession(!!data?.session);
+      } catch {
+        if (mounted) setSession(false);
+      }
+    })();
+    const { data: listener } = supabase.auth.onAuthStateChange((_event, sess) => {
+      if (mounted) setSession(!!sess);
+    });
+    return () => { mounted = false; listener?.subscription?.unsubscribe(); };
+  }, []);
+
+  if (session === null) {
+    return (
+      <View style={S.loadingScreen}>
+        <ActivityIndicator size="large" color={C.accent} />
+      </View>
+    );
+  }
+
   return (
     <NavigationContainer>
       <Stack.Navigator screenOptions={{ headerShown: false }}>
-        <Stack.Screen name="MainTabs" component={MainTabs} />
-        <Stack.Screen name="Dashboard" component={DashboardScreen} />
-        <Stack.Screen name="SafeReport" component={SafeReportScreen} />
-        <Stack.Screen name="UnsafeReport" component={UnsafeReportScreen} />
-        <Stack.Screen name="Admin" component={AdminScreen} />
-        <Stack.Screen name="Media" component={MediaScreen} />
-        <Stack.Screen name="Feed" component={FeedScreen} />
-        <Stack.Screen name="NewAction" component={NewActionScreen} />
-        <Stack.Screen name="NewAsset" component={NewAssetScreen} />
-        <Stack.Screen name="Profile" component={ProfileScreen} />
-        <Stack.Screen name="MediaLibrary" component={MediaLibraryScreen} />
-        <Stack.Screen name="Help" component={HelpScreen} />
-        <Stack.Screen name="TrainingManage" component={TrainingManageScreen} />
-        <Stack.Screen name="NewCourse" component={NewCourseScreen} />
-        <Stack.Screen name="CourseDetail" component={CourseDetailScreen} />
-        <Stack.Screen name="ReportDetail" component={ReportDetailScreen} />
+        {session === false ? (
+          <Stack.Screen name="Login">
+            {(props: any) => <LoginScreen {...props} onLogin={() => setSession(true)} />}
+          </Stack.Screen>
+        ) : (
+          <>
+            <Stack.Screen name="MainTabs" component={MainTabs} />
+            <Stack.Screen name="Dashboard" component={DashboardScreen} />
+            <Stack.Screen name="SafeReport" component={SafeReportScreen} />
+            <Stack.Screen name="UnsafeReport" component={UnsafeReportScreen} />
+            <Stack.Screen name="Admin" component={AdminScreen} />
+            <Stack.Screen name="Media" component={MediaScreen} />
+            <Stack.Screen name="Feed" component={FeedScreen} />
+            <Stack.Screen name="NewAction" component={NewActionScreen} />
+            <Stack.Screen name="NewAsset" component={NewAssetScreen} />
+            <Stack.Screen name="Profile" component={ProfileScreen} />
+            <Stack.Screen name="MediaLibrary" component={MediaLibraryScreen} />
+            <Stack.Screen name="Help" component={HelpScreen} />
+            <Stack.Screen name="TrainingManage" component={TrainingManageScreen} />
+            <Stack.Screen name="NewCourse" component={NewCourseScreen} />
+            <Stack.Screen name="CourseDetail" component={CourseDetailScreen} />
+            <Stack.Screen name="ReportDetail" component={ReportDetailScreen} />
+            <Stack.Screen name="AdminGate" component={AdminGateScreen} />
+            <Stack.Screen name="AdminPanel" component={AdminPanelScreen} />
+          </>
+        )
       </Stack.Navigator>
     </NavigationContainer>
   );
 }
 
 const S = StyleSheet.create({
+  loadingScreen: { flex: 1, alignItems: 'center', justifyContent: 'center', backgroundColor: '#FFF' },
   tabBar: {
     backgroundColor: 'rgba(255,255,255,0.95)',
     borderTopWidth: 1,
