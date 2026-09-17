@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { supabase } from './supabase';
+import { requireAdmin } from './requireAdmin';
 
 export type Role = 'admin' | 'supervisor' | 'employee';
 
@@ -9,8 +10,9 @@ interface RoleData {
   fullName: string | null;
 }
 
-export function useRole(): RoleData & { loading: boolean } {
+export function useRole(): RoleData & { loading: boolean; isAdmin: boolean } {
   const [data, setData] = useState<RoleData>({ role: 'employee', department: null, fullName: null });
+  const [isAdmin, setIsAdmin] = useState(false);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -31,9 +33,9 @@ export function useRole(): RoleData & { loading: boolean } {
             department: row.department,
             fullName: row.full_name,
           });
+          setIsAdmin(row.role === 'admin');
         }
       } catch {
-        // ignore - default to employee
       } finally {
         if (mounted) setLoading(false);
       }
@@ -41,5 +43,5 @@ export function useRole(): RoleData & { loading: boolean } {
     return () => { mounted = false; };
   }, []);
 
-  return { ...data, loading };
+  return { ...data, loading, isAdmin };
 }
