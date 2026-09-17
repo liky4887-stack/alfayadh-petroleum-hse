@@ -31,7 +31,7 @@ export default function MediaLibraryScreen({ navigation }: { navigation: NativeS
       setToast({ visible: true, msg: 'Permission required to access photos' });
       return;
     }
-    const result = await ImagePicker.launchImageLibraryAsync({ mediaTypes: ImagePicker.MediaTypeOptions.Images, quality: 0.8 });
+    const result = await ImagePicker.launchImageLibraryAsync({ mediaTypes: ['images'], quality: 0.8 });
     if (result.cancelled) return;
     const newItems: MediaItem[] = [{ id: `img_${Date.now()}`, uri: result.uri }];
     setItems((prev) => [...newItems, ...prev]);

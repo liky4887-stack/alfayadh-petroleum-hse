@@ -1,10 +1,12 @@
 import { useState, useEffect, useCallback } from 'react';
 import { View, Text, ScrollView, Pressable, StyleSheet, Image, ActivityIndicator, Modal, Alert } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { ChevronLeft, CircleCheck, Pencil, Trash2, Check, Link2, Clock, UserRound } from '@/lib/icons';
+import { ChevronLeft, CircleCheck, Pencil, Trash2, Check, Link2, Clock, UserRound, RefreshCw } from '@/lib/icons';
+import { softDelete, restoreRow } from '@/lib/softDelete';
 import { C, IMG } from '@/theme/colors';
 import { StatusPill } from '@/components/Shared';
 import { useHapticFeedback } from '@/lib/haptics';
+import { useConfirm } from '@/components/ConfirmDialog';
 import { supabase } from '@/lib/supabase';
 import { useHSEStore } from '@/lib/store';
 import { useRole } from '@/lib/useRole';
@@ -23,6 +25,7 @@ interface ActionItem {
   status: string;
   image_url: string | null;
   asset_id: string | null;
+  deleted_at: string | null;
 }
 
 interface AssetInfo {
@@ -37,6 +40,7 @@ const PRIORITY_TONE: Record<string, 'red' | 'orange' | 'yellow' | 'gray'> = {
 
 export default function ActionDetailScreen({ navigation, route }: { navigation: NativeStackNavigationProp<RootStackParamList>; route: any }) {
   const haptics = useHapticFeedback();
+  const { confirm } = useConfirm();
   const { loadActions } = useHSEStore();
   const { isAdmin } = useRole();
   const actionId: string = route.params?.actionId ?? '';
@@ -44,6 +48,7 @@ export default function ActionDetailScreen({ navigation, route }: { navigation: 
   const [linkedAsset, setLinkedAsset] = useState<AssetInfo | null>(null);
   const [loading, setLoading] = useState(true);
   const [deleteModal, setDeleteModal] = useState(false);
+  const [archivedModal, setArchivedModal] = useState(false);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -88,24 +93,51 @@ export default function ActionDetailScreen({ navigation, route }: { navigation: 
   };
 
   const handleDelete = async () => {
-    const ok = await requireAdmin();
-    if (!ok) { Alert.alert('Access Denied', 'Admin access required to delete actions.'); return; }
+    const isAdmin = await requireAdmin();
+    if (!isAdmin) {
+      haptics.notificationError();
+      Alert.alert('Access Denied', 'Admin access required to delete.');
+      return;
+    }
+    const confirmed = await confirm({
+      title: 'Delete action?',
+      message: 'It will be moved to archive. You can restore it later.',
+      confirmLabel: 'Delete',
+      destructive: true,
+    });
+    if (!confirmed) return;
     haptics.impactMedium();
-    setDeleteModal(false);
     try {
-      const { error } = await supabase.from('actions').delete().eq('id', actionId);
-      if (error) {
+      const result = await softDelete('actions', actionId);
+      if (!result.ok) {
         haptics.notificationError();
-        Alert.alert('Error', `Failed to delete: ${error.message}`);
+        Alert.alert('Error', result.error ?? 'Delete failed');
         return;
       }
-      await loadActions();
       haptics.notificationSuccess();
-      navigation.goBack();
+      loadActions();
+      setTimeout(() => navigation.goBack(), 500);
     } catch (err) {
       console.error('Delete error:', err);
       haptics.notificationError();
       Alert.alert('Error', 'Failed to delete action.');
+    }
+  };
+
+  const handleRestore = async () => {
+    haptics.impactMedium();
+    try {
+      const result = await restoreRow('actions', actionId);
+      if (!result.ok) {
+        haptics.notificationError();
+        Alert.alert('Error', result.error ?? 'Restore failed');
+        return;
+      }
+      haptics.notificationSuccess();
+      setArchivedModal(false);
+      load();
+    } catch (err) {
+      haptics.notificationError();
     }
   };
 
@@ -139,7 +171,7 @@ export default function ActionDetailScreen({ navigation, route }: { navigation: 
     );
   }
 
-  const isCompleted = action.status === 'completed';
+  const isDeleted = !!action.deleted_at;
 
   return (
     <SafeAreaView style={S.screen} edges={['top']}>
@@ -149,11 +181,17 @@ export default function ActionDetailScreen({ navigation, route }: { navigation: 
           <Text style={S.backText}>Back</Text>
         </Pressable>
         <Text style={S.headerTitle}>Action Detail</Text>
-        <Pressable onPress={() => { haptics.impactMedium(); navigation.navigate('NewAction', { mode: 'edit', actionId }); }} style={({ pressed }) => [S.editBtn, pressed && S.pressed]}>
-          <Pencil size={16} color="#0EA5E9" strokeWidth={2} />
-          <Text style={S.editText}>Edit</Text>
-        </Pressable>
+        <View style={{ width: 70 }} />
       </View>
+
+      {isDeleted && (
+        <View style={S.archivedBanner}>
+          <Text style={S.archivedBannerText}>
+            ⚠ This item is archived (deleted on {new Date(action.deleted_at).toLocaleDateString()})
+          </Text>
+        </View>
+      )}
+
       <ScrollView contentContainerStyle={S.scrollContent} showsVerticalScrollIndicator={false}>
         {action.image_url && (
           <Image source={{ uri: action.image_url }} style={S.actionImage} />
@@ -161,74 +199,99 @@ export default function ActionDetailScreen({ navigation, route }: { navigation: 
 
         <View style={S.titleSection}>
           <View style={S.badgeRow}>
-            {action.type && <View style={S.typeBadge}><Text style={S.typeBadgeText}>{action.type.toUpperCase()}</Text></View>}
-            {action.priority && <StatusPill label={action.priority} tone={PRIORITY_TONE[action.priority] ?? 'gray'} />}
-            <StatusPill label={action.status} tone={isCompleted ? 'green' : 'blue'} />
+            {action.type && (
+              <View style={S.typeBadge}>
+                <Text style={S.typeBadgeText}>{action.type.toUpperCase()}</Text>
+              </View>
+            )}
+            {action.subcategory && (
+              <View style={[S.typeBadge, { backgroundColor: '#FEF3C7' }]}>
+                <Text style={[S.typeBadgeText, { color: '#92400E' }]}>{action.subcategory}</Text>
+              </View>
+            )}
+            <StatusPill label={action.status} tone={PRIORITY_TONE[action.status] ?? 'gray'} />
+            <StatusPill label={action.priority ?? 'Low'} tone={PRIORITY_TONE[action.priority ?? 'Low']} />
           </View>
           <Text style={S.actionTitle}>{action.title}</Text>
         </View>
 
-        {action.description && (
-          <View style={S.infoCard}>
-            <Text style={S.infoLabel}>Description</Text>
-            <Text style={S.descriptionText}>{action.description}</Text>
-          </View>
-        )}
-
         <View style={S.infoCard}>
-          {action.assignee && (
-            <View style={S.metaRow}>
-              <UserRound size={16} color={C.muted} strokeWidth={1.8} />
-              <Text style={S.metaLabel}>Assignee</Text>
-              <Text style={S.metaValue}>{action.assignee}</Text>
-            </View>
-          )}
-          {action.due_date && (
-            <View style={S.metaRow}>
-              <Clock size={16} color={C.muted} strokeWidth={1.8} />
-              <Text style={S.metaLabel}>Due Date</Text>
-              <Text style={S.metaValue}>{action.due_date}</Text>
-            </View>
-          )}
-          {linkedAsset && (
-            <Pressable
-              onPress={() => { haptics.impactMedium(); navigation.navigate('AssetDetail', { assetId: linkedAsset.id }); }}
-              style={({ pressed }) => [S.metaRow, pressed && S.pressed]}
-            >
-              <Link2 size={16} color={C.muted} strokeWidth={1.8} />
-              <Text style={S.metaLabel}>Linked Asset</Text>
-              <Text style={S.metaValueLink}>{linkedAsset.name} ({linkedAsset.asset_code})</Text>
+          <View style={S.metaRow}>
+            <Text style={S.metaLabel}>Description</Text>
+          </View>
+          <Text style={S.descriptionText}>{action.description ?? 'No description provided.'}</Text>
+
+          <View style={S.metaRow}>
+            <Text style={S.metaLabel}>Assignee</Text>
+            <Text style={S.metaValue}>{action.assignee ?? 'Unassigned'}</Text>
+          </View>
+
+          <View style={S.metaRow}>
+            <Text style={S.metaLabel}>Due Date</Text>
+            <Text style={S.metaValue}>{action.due_date ?? 'No due date'}</Text>
+          </View>
+
+          {action.asset_id && linkedAsset && (
+            <Pressable onPress={() => navigation.navigate('AssetDetail', { assetId: linkedAsset.id })} style={S.metaRow}>
+              <Text style={S.metaLabel}>Asset</Text>
+              <Text style={S.metaValueLink}>{linkedAsset.asset_code} — {linkedAsset.name}</Text>
+              <Link2 size={14} color={C.accent} strokeWidth={2} />
             </Pressable>
           )}
         </View>
-      </ScrollView>
 
-      <View style={S.footer}>
-        {!isCompleted && (
-          <Pressable onPress={handleComplete} style={({ pressed }) => [S.completeBtn, pressed && S.pressed]}>
-            <Check size={18} color="#16A34A" strokeWidth={2.5} />
-            <Text style={S.completeText}>Mark Complete</Text>
-          </Pressable>
-        )}
-        {isAdmin && (
-          <Pressable onPress={() => setDeleteModal(true)} style={({ pressed }) => [S.deleteBtn, pressed && S.pressed]}>
-            <Trash2 size={18} color="#DC2626" strokeWidth={2} />
-            <Text style={S.deleteText}>Delete</Text>
-          </Pressable>
-        )}
-      </View>
+        <View style={S.footer}>
+          {action.status !== 'completed' && (
+            <Pressable onPress={handleComplete} style={({ pressed }) => [S.completeBtn, pressed && S.pressed]}>
+              <Check size={18} color="#16A34A" strokeWidth={2.5} />
+              <Text style={S.completeText}>Mark Complete</Text>
+            </Pressable>
+          )}
+
+          {isDeleted ? (
+            <Pressable onPress={() => setArchivedModal(true)} style={({ pressed }) => [S.restoreBtn, pressed && S.pressed]}>
+              <RefreshCw size={16} color={C.accent} strokeWidth={2} />
+              <Text style={[S.deleteText, { color: C.accent }]}>Restore</Text>
+            </Pressable>
+          ) : (
+            isAdmin && (
+              <Pressable onPress={() => setDeleteModal(true)} style={({ pressed }) => [S.deleteBtn, pressed && S.pressed]}>
+                <Trash2 size={18} color="#DC2626" strokeWidth={2} />
+                <Text style={S.deleteText}>Delete</Text>
+              </Pressable>
+            )
+          )}
+        </View>
+      </ScrollView>
 
       <Modal transparent animationType="fade" visible={deleteModal} onRequestClose={() => setDeleteModal(false)}>
         <Pressable style={S.modalOverlay} onPress={() => setDeleteModal(false)}>
           <View style={S.modalCard}>
             <Text style={S.modalTitle}>Delete Action?</Text>
-            <Text style={S.modalSubtitle}>This action cannot be undone.</Text>
+            <Text style={S.modalSubtitle}>It will be moved to archive. You can restore it later.</Text>
             <View style={S.modalBtns}>
               <Pressable onPress={() => setDeleteModal(false)} style={S.modalCancelBtn}>
                 <Text style={S.modalCancelText}>Cancel</Text>
               </Pressable>
               <Pressable onPress={handleDelete} style={S.modalDeleteBtn}>
                 <Text style={S.modalDeleteText}>Delete</Text>
+              </Pressable>
+            </View>
+          </View>
+        </Pressable>
+      </Modal>
+
+      <Modal transparent animationType="fade" visible={archivedModal} onRequestClose={() => setArchivedModal(false)}>
+        <Pressable style={S.modalOverlay} onPress={() => setArchivedModal(false)}>
+          <View style={S.modalCard}>
+            <Text style={S.modalTitle}>Restore Action?</Text>
+            <Text style={S.modalSubtitle}>This will unarchive the action and make it visible again.</Text>
+            <View style={S.modalBtns}>
+              <Pressable onPress={() => setArchivedModal(false)} style={S.modalCancelBtn}>
+                <Text style={S.modalCancelText}>Cancel</Text>
+              </Pressable>
+              <Pressable onPress={handleRestore} style={[S.modalDeleteBtn, { backgroundColor: '#0EA5E9' }]}>
+                <Text style={S.modalDeleteText}>Restore</Text>
               </Pressable>
             </View>
           </View>
@@ -245,6 +308,8 @@ const S = StyleSheet.create({
   backBtn: { flexDirection: 'row', alignItems: 'center', gap: 4 },
   backText: { fontSize: 15, fontWeight: '600', color: C.ink },
   headerTitle: { fontSize: 17, fontWeight: '800', color: C.ink, flex: 1, textAlign: 'center' },
+  archivedBanner: { backgroundColor: '#FEF2F2', paddingHorizontal: 16, paddingVertical: 10, borderBottomWidth: 1, borderBottomColor: '#FCA5A5' },
+  archivedBannerText: { fontSize: 13, fontWeight: '600', color: '#DC2626', textAlign: 'center' },
   editBtn: { flexDirection: 'row', alignItems: 'center', gap: 4, paddingHorizontal: 12, paddingVertical: 8, borderRadius: 8, backgroundColor: '#E0F2FE' },
   editText: { fontSize: 14, fontWeight: '700', color: '#0EA5E9' },
   scrollContent: { paddingBottom: 100 },
@@ -268,6 +333,7 @@ const S = StyleSheet.create({
   footer: { flexDirection: 'row', gap: 12, padding: 20, borderTopWidth: 1, borderTopColor: '#E5E7EB', backgroundColor: '#FFF' },
   completeBtn: { flex: 1, minHeight: 48, borderRadius: 12, borderWidth: 1.5, borderColor: '#16A34A', backgroundColor: '#FFF', flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8 },
   completeText: { fontSize: 16, fontWeight: '700', color: '#16A34A' },
+  restoreBtn: { flex: 1, minHeight: 48, borderRadius: 12, borderWidth: 1.5, borderColor: '#0EA5E9', backgroundColor: '#FFF', flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8 },
   deleteBtn: { flex: 1, minHeight: 48, borderRadius: 12, borderWidth: 1.5, borderColor: '#DC2626', backgroundColor: '#FFF', flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8 },
   deleteText: { fontSize: 16, fontWeight: '700', color: '#DC2626' },
   modalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.5)', alignItems: 'center', justifyContent: 'center', padding: 24 },

@@ -7,6 +7,7 @@ import { C, IMG } from '@/theme/colors';
 import { BrandHeader, IconButton, StatusPill } from '@/components/Shared';
 import { useHapticFeedback } from '@/lib/haptics';
 import { supabase } from '@/lib/supabase';
+import { softDelete } from '@/lib/softDelete';
 import { useHSEStore } from '@/lib/store';
 import { useRole } from '@/lib/useRole';
 import { requireAdmin } from '@/lib/requireAdmin';
@@ -38,20 +39,19 @@ export default function AssetScreen({ navigation }: { navigation: NativeStackNav
   }, [loadAssets]));
 
   const handleDelete = async (asset: Asset) => {
-    const ok = await requireAdmin();
-    if (!ok) { setToast({ visible: true, msg: 'Admin access required to delete.', type: 'error' }); return; }
+    const isAdmin = await requireAdmin();
+    if (!isAdmin) { setToast({ visible: true, msg: 'Admin access required', type: 'error' }); return; }
     haptics.impactMedium();
     setQuickAction(null);
     try {
-      const { error } = await supabase.from('assets').delete().eq('id', asset.id);
-      if (error) {
+      const result = await softDelete('assets', asset.id);
+      if (!result.ok) {
         haptics.notificationError();
-        setToast({ visible: true, msg: `Failed: ${error.message}`, type: 'error' });
+        setToast({ visible: true, msg: result.error ?? 'Failed', type: 'error' });
         return;
       }
-      await loadAssets();
       haptics.notificationSuccess();
-      setToast({ visible: true, msg: 'Asset deleted', type: 'success' });
+      setToast({ visible: true, msg: 'Asset archived', type: 'success' });
     } catch (err) {
       console.error('Delete error:', err);
       haptics.notificationError();
@@ -85,7 +85,7 @@ export default function AssetScreen({ navigation }: { navigation: NativeStackNav
             </View>
           ) : (
             <View style={S.assetList}>
-              {assets.map((asset, i) => (
+              {assets.filter((a) => !a.deleted_at).map((asset, i) => (
                 <Pressable
                   key={asset.id}
                   onPress={() => { haptics.impactMedium(); navigation.navigate('AssetDetail', { assetId: asset.id }); }}

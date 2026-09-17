@@ -6,7 +6,8 @@ import { C, TYPE_LABELS, STATUS_LABELS, formatDate } from '@/theme/colors';
 import { useHapticFeedback } from '@/lib/haptics';
 import { useConfirm } from '@/components/ConfirmDialog';
 import { Toast } from '@/components/Toast';
-import { ChevronLeft, MapPin, Trash2, CircleCheck, Link2, Pencil, Check, X } from '@/lib/icons';
+import { ChevronLeft, MapPin, Trash2, CircleCheck, Link2, Pencil, Check, X, RefreshCw } from '@/lib/icons';
+import { softDelete, restoreRow } from '@/lib/softDelete';
 import { useRole } from '@/lib/useRole';
 import { requireAdmin } from '@/lib/requireAdmin';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
@@ -24,8 +25,10 @@ export default function ReportDetailScreen({ navigation, route }: { navigation: 
   const [editNote, setEditNote] = useState('');
   const [editAction, setEditAction] = useState('');
   const [toast, setToast] = useState({ visible: false, msg: '', type: 'success' as 'success' | 'error' });
+  const [archivedModal, setArchivedModal] = useState(false);
   const { confirm, dialog } = useConfirm();
   const { isAdmin } = useRole();
+  const isDeleted = !!report?.deleted_at;
 
   const loadReport = useCallback(async () => {
     if (!hasReportId) {
@@ -63,25 +66,52 @@ export default function ReportDetailScreen({ navigation, route }: { navigation: 
   };
 
   const handleDelete = async () => {
-    const ok = await requireAdmin();
-    if (!ok) { showToast('Admin access required to delete reports.', 'error'); return; }
+    const isAdmin = await requireAdmin();
+    if (!isAdmin) {
+      haptics.notificationError();
+      setToast({ visible: true, msg: 'Admin access required', type: 'error' });
+      return;
+    }
     const confirmed = await confirm({
-      title: 'Delete Report',
-      message: 'Are you sure you want to permanently delete this report?',
+      title: 'Delete Report?',
+      message: 'It will be moved to archive. You can restore it later.',
       confirmLabel: 'Delete',
       destructive: true,
     });
     if (!confirmed) return;
     haptics.impactMedium();
-    const { error } = await supabase.from('hse_reports').delete().eq('id', reportId);
-    if (error) {
-      console.error('Delete error:', error);
+    try {
+      const result = await softDelete('hse_reports', reportId);
+      if (!result.ok) {
+        haptics.notificationError();
+        setToast({ visible: true, msg: result.error ?? 'Delete failed', type: 'error' });
+        return;
+      }
+      haptics.notificationSuccess();
+      setToast({ visible: true, msg: 'Report archived', type: 'success' });
+      setTimeout(() => navigation.goBack(), 500);
+    } catch (err) {
       haptics.notificationError();
-      showToast(`Failed: ${error.message}`, 'error');
-      return;
+      setToast({ visible: true, msg: 'Failed to delete', type: 'error' });
     }
-    haptics.notificationSuccess();
-    navigation.goBack();
+  };
+
+  const handleRestore = async () => {
+    haptics.impactMedium();
+    try {
+      const result = await restoreRow('hse_reports', reportId);
+      if (!result.ok) {
+        haptics.notificationError();
+        setToast({ visible: true, msg: result.error ?? 'Restore failed', type: 'error' });
+        return;
+      }
+      haptics.notificationSuccess();
+      setToast({ visible: true, msg: 'Report restored', type: 'success' });
+      setArchivedModal(false);
+      loadReport();
+    } catch (err) {
+      haptics.notificationError();
+    }
   };
 
   const handleSaveEdit = async () => {
@@ -148,6 +178,13 @@ export default function ReportDetailScreen({ navigation, route }: { navigation: 
 
   return (
     <SafeAreaView style={S.screen} edges={['top']}>
+      {isDeleted && (
+        <View style={S.archivedBanner}>
+          <Text style={S.archivedBannerText}>
+            ⚠ This report is archived (deleted on {formatDate(report.deleted_at ?? report.created_at)})
+          </Text>
+        </View>
+      )}
       <View style={S.header}>
         <Pressable onPress={() => { haptics.impactMedium(); navigation.goBack(); }} style={({ pressed }) => [S.backBtn, pressed && S.pressed]}>
           <ChevronLeft size={20} color={C.ink} />
@@ -271,7 +308,12 @@ export default function ReportDetailScreen({ navigation, route }: { navigation: 
           </Pressable>
         )}
 
-        {isAdmin && (
+        {isDeleted ? (
+          <Pressable onPress={() => setArchivedModal(true)} style={({ pressed }) => [S.restoreBtn, pressed && S.pressed]}>
+            <RefreshCw size={16} color={C.accent} strokeWidth={2} />
+            <Text style={[S.deleteBtnText, { color: C.accent }]}>Restore</Text>
+          </Pressable>
+        ) : isAdmin && (
           <Pressable onPress={handleDelete} style={({ pressed }) => [S.deleteBtn, pressed && S.pressed]}>
             <Trash2 size={16} color={C.red} strokeWidth={2} />
             <Text style={S.deleteBtnText}>Delete Report</Text>
@@ -280,6 +322,24 @@ export default function ReportDetailScreen({ navigation, route }: { navigation: 
       </ScrollView>
       {dialog}
       <Toast message={toast.msg} type={toast.type} visible={toast.visible} onHide={() => setToast({ visible: false, msg: '', type: 'success' })} />
+      {archivedModal && (
+        <Modal transparent animationType="fade" visible={true} onRequestClose={() => setArchivedModal(false)}>
+          <Pressable style={S.modalOverlay} onPress={() => setArchivedModal(false)}>
+            <View style={S.modalCard}>
+              <Text style={S.modalTitle}>Restore Report?</Text>
+              <Text style={S.modalSubtitle}>This will unarchive the report and make it visible again.</Text>
+              <View style={S.modalBtns}>
+                <Pressable onPress={() => setArchivedModal(false)} style={S.modalCancelBtn}>
+                  <Text style={S.modalCancelText}>Cancel</Text>
+                </Pressable>
+                <Pressable onPress={handleRestore} style={[S.modalDeleteBtn, { backgroundColor: '#0EA5E9' }]}>
+                  <Text style={S.modalDeleteText}>Restore</Text>
+                </Pressable>
+              </View>
+            </View>
+          </Pressable>
+        </Modal>
+      )}
     </SafeAreaView>
   );
 }
@@ -324,4 +384,7 @@ const S = StyleSheet.create({
   deleteBtnText: { fontSize: 15, fontWeight: '700', color: C.red },
   emptyText: { fontSize: 16, fontWeight: '600', color: C.muted },
   pressed: { opacity: 0.7 },
-});
+
+  archivedBanner: { backgroundColor: '#FEF2F2', paddingHorizontal: 16, paddingVertical: 10, borderBottomWidth: 1, borderBottomColor: '#FCA5A5' },
+  archivedBannerText: { fontSize: 13, fontWeight: '600', color: '#DC2626', textAlign: 'center' },
+  restoreBtn: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, backgroundColor: '#FFFFFF', borderWidth: 1, borderColor: '#0EA5E9', paddingVertical: 14, borderRadius: 14, marginTop: 12 },});

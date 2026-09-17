@@ -42,7 +42,7 @@ export default function TrainingManageScreen({ navigation }: { navigation: Nativ
   const loadData = useCallback(async () => {
     setLoading(true);
     const [{ data: coursesData }, { data: enrollmentsData }, { data: empData }] = await Promise.all([
-      supabase.from('training_courses').select('*').order('created_at', { ascending: false }),
+      supabase.from('training_courses').select('*').is('deleted_at', null).order('created_at', { ascending: false }),
       supabase.from('enrollments').select('*'),
       supabase.from('employees').select('*').order('full_name', { ascending: true }),
     ]);

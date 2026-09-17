@@ -7,6 +7,7 @@ import { C } from '@/theme/colors';
 import { BrandHeader, IconButton, StatusPill } from '@/components/Shared';
 import { useHapticFeedback } from '@/lib/haptics';
 import { supabase } from '@/lib/supabase';
+import { softDelete } from '@/lib/softDelete';
 import { useHSEStore } from '@/lib/store';
 import { useRole } from '@/lib/useRole';
 import { requireAdmin } from '@/lib/requireAdmin';
@@ -56,25 +57,25 @@ export default function ActionsScreen({ navigation }: { navigation: NativeStackN
   }, [loadActions]));
 
   const filteredActions = actions.filter((a) => {
+    if (a.deleted_at) return false;
     if (activeFilter === 'all') return true;
     return a.status === activeFilter;
   });
 
   const handleDelete = async (action: ActionItem) => {
-    const ok = await requireAdmin();
-    if (!ok) { setToast({ visible: true, msg: 'Admin access required to delete.', type: 'error' }); return; }
+    const isAdmin = await requireAdmin();
+    if (!isAdmin) { setToast({ visible: true, msg: 'Admin access required', type: 'error' }); return; }
     haptics.impactMedium();
     setQuickAction(null);
     try {
-      const { error } = await supabase.from('actions').delete().eq('id', action.id);
-      if (error) {
+      const result = await softDelete('actions', action.id);
+      if (!result.ok) {
         haptics.notificationError();
-        setToast({ visible: true, msg: `Failed: ${error.message}`, type: 'error' });
+        setToast({ visible: true, msg: result.error ?? 'Failed', type: 'error' });
         return;
       }
-      await loadActions();
       haptics.notificationSuccess();
-      setToast({ visible: true, msg: 'Action deleted', type: 'success' });
+      setToast({ visible: true, msg: 'Action archived', type: 'success' });
     } catch (err) {
       console.error('Delete error:', err);
       haptics.notificationError();

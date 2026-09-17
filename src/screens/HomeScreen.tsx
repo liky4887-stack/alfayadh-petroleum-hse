@@ -96,16 +96,16 @@ export default function HomeScreen({ navigation }: { navigation: NativeStackNavi
     return (a.due_date ?? '').localeCompare(b.due_date ?? '');
   });
 
-  const activeActions = sortedActions.filter((a) => a.status === 'todo' || a.status === 'in_progress');
+  const activeActions = sortedActions.filter((a) => (a.status === 'todo' || a.status === 'in_progress') && !a.deleted_at);
   const completedToday = sortedActions.filter((a) => {
     if (a.status !== 'completed') return false;
     if (!a.updated_at) return false;
     return a.updated_at.slice(0, 10) === new Date().toISOString().slice(0, 10);
   }).length;
   const overdueActions = sortedActions.filter((a) => a.status !== 'completed' && a.due_date && new Date(a.due_date) < new Date()).length;
-  const criticalCount = sortedActions.filter((a) => a.priority === 'Critical' && a.status !== 'completed').length;
+  const criticalCount = sortedActions.filter((a) => a.priority === 'Critical' && a.status !== 'completed' && !a.deleted_at).length;
 
-  const activeAssets = assets.filter((a) => a.status === 'active').length;
+  const activeAssetsCount = assets.filter((a) => a.status === 'active' && !a.deleted_at).length;
   const maintenanceAssets = assets.filter((a) => a.status === 'in_maintenance').length;
 
   const deptPill = (
@@ -162,14 +162,14 @@ export default function HomeScreen({ navigation }: { navigation: NativeStackNavi
                 <SafetyDashboard
                   t={t} haptics={haptics} navigation={navigation}
                   activeActions={activeActions}
-                  activeAssets={activeAssets}
+                  activeAssets={activeAssetsCount}
                   completedToday={completedToday}
                 />
               )}
               {department === 'operations' && (
                 <OperationsDashboard
                   t={t} haptics={haptics} navigation={navigation}
-                  activeAssets={activeAssets} scheduledActions={activeActions.length}
+                  activeAssets={activeAssetsCount} scheduledActions={activeActions.length}
                   overdueActions={overdueActions} completedToday={completedToday}
                   assets={assets.slice(0, 4)}
                 />

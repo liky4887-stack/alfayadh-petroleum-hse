@@ -67,6 +67,8 @@ interface HSEStore {
   subscribeToReports: () => () => void;
   setOnline: (online: boolean) => void;
   flushQueue: () => Promise<void>;
+  showDeleted: boolean;
+  setShowDeleted: (v: boolean) => void;
 }
 
 const QUEUE_KEY = 'hse_offline_queue';
@@ -92,11 +94,13 @@ export const useHSEStore = create<HSEStore>((set, get) => ({
   loading: true,
   isOnline: true,
   syncPending: 0,
+  showDeleted: false,
 
   loadReports: async () => {
     const { data, error } = await supabase
       .from('hse_reports')
       .select('*')
+      .is('deleted_at', null)
       .order('created_at', { ascending: false })
       .limit(100);
     if (error) {
@@ -110,6 +114,7 @@ export const useHSEStore = create<HSEStore>((set, get) => ({
     const { data, error } = await supabase
       .from('assets')
       .select('*')
+      .is('deleted_at', null)
       .order('created_at', { ascending: false });
     if (error) {
       console.error('loadAssets error:', error);
@@ -122,6 +127,7 @@ export const useHSEStore = create<HSEStore>((set, get) => ({
     const { data, error } = await supabase
       .from('actions')
       .select('*')
+      .is('deleted_at', null)
       .order('created_at', { ascending: false });
     if (error) {
       console.error('loadActions error:', error);
@@ -134,6 +140,7 @@ export const useHSEStore = create<HSEStore>((set, get) => ({
     const { data, error } = await supabase
       .from('feeds')
       .select('*')
+      .is('deleted_at', null)
       .order('created_at', { ascending: false })
       .limit(50);
     if (error) {
@@ -273,4 +280,5 @@ export const useHSEStore = create<HSEStore>((set, get) => ({
       get().loadReports();
     }
   },
+  setShowDeleted: (v) => set({ showDeleted: v }),
 }));
