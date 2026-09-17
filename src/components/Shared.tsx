@@ -92,7 +92,7 @@ export function StatusPill({ label, tone }: { label: string; tone: 'green' | 're
     yellow: [C.warningBg, C.warning],
     gray: [C.surfaceAlt, C.muted],
   } as const;
-  const [bg, fg] = map[tone];
+  const [bg, fg] = (map as Record<string, readonly [string, string]>)[tone] ?? map.gray;
   return (
     <View style={[S.statusPill, { backgroundColor: bg }]}>
       <Text style={[S.statusPillText, { color: fg }]}>{label}</Text>
