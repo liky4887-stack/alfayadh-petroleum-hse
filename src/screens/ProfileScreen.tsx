@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { View, Text, ScrollView, Pressable, StyleSheet, TextInput as RNTextInput } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { ChevronRight, Check, UserRound } from '@/lib/icons';
+import { ChevronRight, Check, UserRound } from 'lucide-react';
 import { C } from '@/theme/colors';
 import { useHapticFeedback } from '@/lib/haptics';
 import { Toast } from '@/components/Toast';

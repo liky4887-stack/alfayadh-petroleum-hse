@@ -21,17 +21,17 @@ export default function SafeReportScreen({ navigation }: { navigation: NativeSta
 
   const pickImage = async () => {
     haptics.impactMedium();
-    const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+    const { status } = await ImagePicker.requestCameraRollPermissionsAsync();
     if (status !== 'granted') {
       Alert.alert('تنبيه', 'يلزم إذن الوصول للصور');
       return;
     }
     const result = await ImagePicker.launchImageLibraryAsync({
-      mediaTypes: ['images'] as any,
+      mediaTypes: ImagePicker.MediaTypeOptions.Images,
       quality: 0.8,
     });
-    if (!result.canceled && result.assets[0]) {
-      setImageUri(result.assets[0].uri);
+    if (!result.cancelled && result.uri) {
+      setImageUri(result.uri);
       haptics.notificationSuccess();
     }
   };
