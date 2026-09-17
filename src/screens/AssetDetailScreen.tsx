@@ -7,6 +7,8 @@ import { StatusPill } from '@/components/Shared';
 import { useHapticFeedback } from '@/lib/haptics';
 import { supabase } from '@/lib/supabase';
 import { useHSEStore } from '@/lib/store';
+import { useRole } from '@/lib/useRole';
+import { requireAdmin } from '@/lib/requireAdmin';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import type { RootStackParamList } from '@/navigation/AppNavigation';
 
@@ -31,6 +33,7 @@ interface ActionItem {
 export default function AssetDetailScreen({ navigation, route }: { navigation: NativeStackNavigationProp<RootStackParamList>; route: any }) {
   const haptics = useHapticFeedback();
   const { loadAssets } = useHSEStore();
+  const { isAdmin } = useRole();
   const assetId: string = route.params?.assetId ?? '';
   const [asset, setAsset] = useState<Asset | null>(null);
   const [actions, setActions] = useState<ActionItem[]>([]);
@@ -62,6 +65,8 @@ export default function AssetDetailScreen({ navigation, route }: { navigation: N
   }, [navigation, load]);
 
   const handleDelete = async () => {
+    const ok = await requireAdmin();
+    if (!ok) { Alert.alert('Access Denied', 'Admin access required to delete assets.'); return; }
     haptics.impactMedium();
     setDeleteModal(false);
     try {
@@ -184,10 +189,12 @@ export default function AssetDetailScreen({ navigation, route }: { navigation: N
       </ScrollView>
 
       <View style={S.footer}>
-        <Pressable onPress={() => setDeleteModal(true)} style={({ pressed }) => [S.deleteBtn, pressed && S.pressed]}>
-          <Trash2 size={18} color="#DC2626" strokeWidth={2} />
-          <Text style={S.deleteText}>Delete Asset</Text>
-        </Pressable>
+        {isAdmin && (
+          <Pressable onPress={() => setDeleteModal(true)} style={({ pressed }) => [S.deleteBtn, pressed && S.pressed]}>
+            <Trash2 size={18} color="#DC2626" strokeWidth={2} />
+            <Text style={S.deleteText}>Delete Asset</Text>
+          </Pressable>
+        )}
       </View>
 
       <Modal transparent animationType="fade" visible={deleteModal} onRequestClose={() => setDeleteModal(false)}>

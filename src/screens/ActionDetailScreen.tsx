@@ -7,6 +7,8 @@ import { StatusPill } from '@/components/Shared';
 import { useHapticFeedback } from '@/lib/haptics';
 import { supabase } from '@/lib/supabase';
 import { useHSEStore } from '@/lib/store';
+import { useRole } from '@/lib/useRole';
+import { requireAdmin } from '@/lib/requireAdmin';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import type { RootStackParamList } from '@/navigation/AppNavigation';
 
@@ -36,6 +38,7 @@ const PRIORITY_TONE: Record<string, 'red' | 'orange' | 'yellow' | 'gray'> = {
 export default function ActionDetailScreen({ navigation, route }: { navigation: NativeStackNavigationProp<RootStackParamList>; route: any }) {
   const haptics = useHapticFeedback();
   const { loadActions } = useHSEStore();
+  const { isAdmin } = useRole();
   const actionId: string = route.params?.actionId ?? '';
   const [action, setAction] = useState<ActionItem | null>(null);
   const [linkedAsset, setLinkedAsset] = useState<AssetInfo | null>(null);
@@ -85,6 +88,8 @@ export default function ActionDetailScreen({ navigation, route }: { navigation: 
   };
 
   const handleDelete = async () => {
+    const ok = await requireAdmin();
+    if (!ok) { Alert.alert('Access Denied', 'Admin access required to delete actions.'); return; }
     haptics.impactMedium();
     setDeleteModal(false);
     try {
@@ -205,10 +210,12 @@ export default function ActionDetailScreen({ navigation, route }: { navigation: 
             <Text style={S.completeText}>Mark Complete</Text>
           </Pressable>
         )}
-        <Pressable onPress={() => setDeleteModal(true)} style={({ pressed }) => [S.deleteBtn, pressed && S.pressed]}>
-          <Trash2 size={18} color="#DC2626" strokeWidth={2} />
-          <Text style={S.deleteText}>Delete</Text>
-        </Pressable>
+        {isAdmin && (
+          <Pressable onPress={() => setDeleteModal(true)} style={({ pressed }) => [S.deleteBtn, pressed && S.pressed]}>
+            <Trash2 size={18} color="#DC2626" strokeWidth={2} />
+            <Text style={S.deleteText}>Delete</Text>
+          </Pressable>
+        )}
       </View>
 
       <Modal transparent animationType="fade" visible={deleteModal} onRequestClose={() => setDeleteModal(false)}>
