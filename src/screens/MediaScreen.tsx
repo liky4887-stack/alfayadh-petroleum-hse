@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { View, Text, Pressable, ScrollView, StyleSheet, Alert, Image } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { ChevronRight, Trash2, Pencil } from '@/lib/icons';
+import { ChevronLeft, Trash2, Pencil } from '@/lib/icons';
 import { C, IMG } from '@/theme/colors';
 import { IconButton } from '@/components/Shared';
 import { useHapticFeedback } from '@/lib/haptics';
@@ -16,7 +16,7 @@ export default function MediaScreen({ navigation }: { navigation: NativeStackNav
   return (
     <SafeAreaView style={S.fullScreen} edges={['top']}>
       <View style={S.mediaHeader}>
-        <IconButton icon={<ChevronRight size={26} color={C.ink} />} onPress={() => navigation.goBack()} />
+        <IconButton icon={<ChevronLeft size={26} color={C.ink} />} onPress={() => navigation.goBack()} />
         <Pressable onPress={() => navigation.goBack()} style={({ pressed }) => [S.doneBtn, pressed && S.cardPressed]}>
           <Text style={S.doneText}>Done</Text>
         </Pressable>
