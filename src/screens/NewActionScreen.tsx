@@ -1,11 +1,13 @@
 import { useState, useEffect } from 'react';
 import { View, Text, ScrollView, Pressable, StyleSheet, TextInput as RNTextInput, Modal, FlatList, ActivityIndicator } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { ChevronRight, Check, Link2, ClipboardCheck } from '@/lib/icons';
+import * as ImagePicker from 'expo-image-picker';
+import { ChevronRight, Check, Link2, ClipboardCheck, Camera } from '@/lib/icons';
 import { C } from '@/theme/colors';
 import { supabase } from '@/lib/supabase';
 import { useHapticFeedback } from '@/lib/haptics';
 import { Toast } from '@/components/Toast';
+import { uploadImage } from '@/lib/uploadImage';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import type { RootStackParamList } from '@/navigation/AppNavigation';
 
@@ -29,14 +31,16 @@ export default function NewActionScreen({ navigation }: { navigation: NativeStac
   const [assetName, setAssetName] = useState<string | null>(null);
   const [assets, setAssets] = useState<Asset[]>([]);
   const [assetPickerVisible, setAssetPickerVisible] = useState(false);
+  const [imageUri, setImageUri] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
-  const [toast, setToast] = useState({ visible: false, msg: '' });
+  const [toast, setToast] = useState({ visible: false, msg: '', type: 'success' as 'success' | 'error' });
   const [errors, setErrors] = useState<Record<string, string>>({});
   const haptics = useHapticFeedback();
 
   useEffect(() => {
-    supabase.from('assets').select('id, asset_code, name').order('name', { ascending: true }).then(({ data }) => {
-      if (data) setAssets(data as Asset[]);
+    supabase.from('assets').select('id, asset_code, name').order('name', { ascending: true }).then(({ data, error }: { data: Asset[] | null; error: any }) => {
+      if (error) console.error('Asset load error:', error);
+      if (data) setAssets(data);
     });
   }, []);
 
@@ -49,28 +53,77 @@ export default function NewActionScreen({ navigation }: { navigation: NativeStac
     return Object.keys(e).length === 0;
   };
 
+  const pickImage = async () => {
+    haptics.impactMedium();
+    try {
+      const { status } = await ImagePicker.requestCameraRollPermissionsAsync();
+      if (status !== 'granted') {
+        setToast({ visible: true, msg: 'Permission required to access photos', type: 'error' });
+        return;
+      }
+      const result = await ImagePicker.launchImageLibraryAsync({ mediaTypes: ImagePicker.MediaTypeOptions.Images, quality: 0.8 });
+      if (!result.cancelled && result.uri) {
+        setImageUri(result.uri);
+      }
+    } catch (err) {
+      console.error('Image picker error:', err);
+    }
+  };
+
   const handleSave = async () => {
     if (!validate()) { haptics.notificationError(); return; }
     haptics.impactMedium();
     setSaving(true);
-    const { error } = await supabase.from('actions').insert({
+
+    let imageUrl: string | null = null;
+    if (imageUri) {
+      try {
+        imageUrl = await uploadImage(imageUri, 'actions');
+        if (!imageUrl) {
+          setToast({ visible: true, msg: 'Image upload failed', type: 'error' });
+          setSaving(false);
+          haptics.notificationError();
+          return;
+        }
+      } catch (err) {
+        console.error('Image upload exception:', err);
+        setToast({ visible: true, msg: 'Image upload failed', type: 'error' });
+        setSaving(false);
+        haptics.notificationError();
+        return;
+      }
+    }
+
+    const payload = {
       title: title.trim(),
       description: description.trim() || null,
-      type, priority,
+      type,
+      priority,
       assignee: assignee.trim() || null,
       due_date: dueDate.trim() || null,
       status: 'todo',
+      image_url: imageUrl,
       asset_id: assetId,
-    });
-    setSaving(false);
-    if (error) {
+    };
+
+    try {
+      const { data, error } = await supabase.from('actions').insert(payload).select().single();
+      setSaving(false);
+      if (error) {
+        console.error('[NewAction] Insert error:', error);
+        haptics.notificationError();
+        setToast({ visible: true, msg: `Failed: ${error.message}`, type: 'error' });
+        return;
+      }
+      haptics.notificationSuccess();
+      setToast({ visible: true, msg: 'Action saved', type: 'success' });
+      setTimeout(() => navigation.goBack(), 500);
+    } catch (err) {
+      console.error('[NewAction] Insert exception:', err);
+      setSaving(false);
       haptics.notificationError();
-      setToast({ visible: true, msg: 'Failed to save action' });
-      return;
+      setToast({ visible: true, msg: 'Failed to save action', type: 'error' });
     }
-    haptics.notificationSuccess();
-    setToast({ visible: true, msg: 'Action created successfully' });
-    setTimeout(() => navigation.goBack(), 1200);
   };
 
   const selectAsset = (asset: Asset) => {
@@ -119,6 +172,20 @@ export default function NewActionScreen({ navigation }: { navigation: NativeStac
           <Field label="Due Date (YYYY-MM-DD)">
             <Input value={dueDate} onChangeText={setDueDate} placeholder="2026-12-31" />
           </Field>
+          <Field label="Photo (optional)">
+            <Pressable onPress={pickImage} style={({ pressed }) => [S.imagePicker, pressed && S.btnPressed]}>
+              {imageUri ? (
+                <View style={S.previewWrap}>
+                  <Text style={S.previewText}>Image selected</Text>
+                </View>
+              ) : (
+                <View style={S.imagePlaceholder}>
+                  <Camera size={28} color={C.mutedLight} strokeWidth={1.5} />
+                  <Text style={S.imagePlaceholderText}>Tap to add photo</Text>
+                </View>
+              )}
+            </Pressable>
+          </Field>
         </View>
       </ScrollView>
       <View style={S.footer}>
@@ -126,11 +193,15 @@ export default function NewActionScreen({ navigation }: { navigation: NativeStac
           <Text style={S.cancelText}>Cancel</Text>
         </Pressable>
         <Pressable onPress={handleSave} disabled={saving} style={({ pressed }) => [S.saveBtn, pressed && S.btnPressed, saving && S.btnDisabled]}>
-          <Check size={18} color="#FFF" strokeWidth={2.5} />
-          <Text style={S.saveText}>{saving ? 'Saving...' : 'Save Action'}</Text>
+          {saving ? <ActivityIndicator size="small" color="#FFF" /> : (
+            <>
+              <Check size={18} color="#FFF" strokeWidth={2.5} />
+              <Text style={S.saveText}>Save Action</Text>
+            </>
+          )}
         </Pressable>
       </View>
-      <Toast message={toast.msg} type="success" visible={toast.visible} onHide={() => setToast({ visible: false, msg: '' })} />
+      <Toast message={toast.msg} type={toast.type} visible={toast.visible} onHide={() => setToast({ visible: false, msg: '', type: 'success' })} />
       <Modal transparent animationType="fade" visible={assetPickerVisible} onRequestClose={() => setAssetPickerVisible(false)}>
         <Pressable style={S.modalOverlay} onPress={() => setAssetPickerVisible(false)}>
           <View style={S.modalCard}>
@@ -205,7 +276,7 @@ const S = StyleSheet.create({
   backText: { fontSize: 15, fontWeight: '600', color: C.ink },
   headerTitle: { fontSize: 18, fontWeight: '800', color: C.ink },
   scroll: { flex: 1 },
-  scrollContent: { padding: 20 },
+  scrollContent: { padding: 20, paddingBottom: 100 },
   form: { gap: 18 },
   field: { gap: 8 },
   fieldLabel: { fontSize: 14, fontWeight: '700', color: C.ink },
@@ -220,10 +291,15 @@ const S = StyleSheet.create({
   chipSelected: { borderColor: C.primary, backgroundColor: C.primarySoft },
   chipText: { fontSize: 14, fontWeight: '500', color: C.inkLight },
   chipTextSelected: { fontWeight: '700', color: C.primary },
+  imagePicker: { borderRadius: 14, overflow: 'hidden', borderWidth: 1, borderColor: C.borderLight, minHeight: 120, backgroundColor: '#FFF' },
+  imagePlaceholder: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: 10 },
+  imagePlaceholderText: { fontSize: 14, fontWeight: '500', color: C.mutedLight },
+  previewWrap: { flex: 1, alignItems: 'center', justifyContent: 'center', paddingVertical: 20 },
+  previewText: { fontSize: 14, fontWeight: '600', color: C.accent },
   footer: { flexDirection: 'row', gap: 12, padding: 20, borderTopWidth: 1, borderTopColor: C.borderLight, backgroundColor: '#FFF' },
-  cancelBtn: { flex: 1, minHeight: 50, borderRadius: 12, borderWidth: 1, borderColor: C.borderLight, alignItems: 'center', justifyContent: 'center' },
+  cancelBtn: { flex: 1, minHeight: 48, borderRadius: 12, borderWidth: 1, borderColor: C.borderLight, alignItems: 'center', justifyContent: 'center' },
   cancelText: { fontSize: 16, fontWeight: '600', color: C.mutedLight },
-  saveBtn: { flex: 1, minHeight: 50, borderRadius: 12, backgroundColor: C.primary, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8 },
+  saveBtn: { flex: 1, minHeight: 48, borderRadius: 12, backgroundColor: C.primary, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8 },
   saveText: { fontSize: 16, fontWeight: '700', color: '#FFF' },
   btnPressed: { opacity: 0.85 },
   btnDisabled: { opacity: 0.5 },

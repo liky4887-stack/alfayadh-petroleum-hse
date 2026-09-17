@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { View, Text, ScrollView, Pressable, StyleSheet, TextInput as RNTextInput, Image } from 'react-native';
+import { View, Text, ScrollView, Pressable, StyleSheet, TextInput as RNTextInput, Image, ActivityIndicator } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import * as ImagePicker from 'expo-image-picker';
 import { ChevronRight, Check, Camera } from '@/lib/icons';
@@ -7,6 +7,7 @@ import { C } from '@/theme/colors';
 import { supabase } from '@/lib/supabase';
 import { useHapticFeedback } from '@/lib/haptics';
 import { Toast } from '@/components/Toast';
+import { uploadImage } from '@/lib/uploadImage';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import type { RootStackParamList } from '@/navigation/AppNavigation';
 
@@ -21,7 +22,7 @@ export default function NewAssetScreen({ navigation }: { navigation: NativeStack
   const [status, setStatus] = useState<string | null>(null);
   const [imageUri, setImageUri] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
-  const [toast, setToast] = useState({ visible: false, msg: '' });
+  const [toast, setToast] = useState({ visible: false, msg: '', type: 'success' as 'success' | 'error' });
   const [errors, setErrors] = useState<Record<string, string>>({});
   const haptics = useHapticFeedback();
 
@@ -36,14 +37,18 @@ export default function NewAssetScreen({ navigation }: { navigation: NativeStack
 
   const pickImage = async () => {
     haptics.impactMedium();
-    const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
-    if (status !== 'granted') {
-      setToast({ visible: true, msg: 'Permission required to access photos' });
-      return;
-    }
-    const result = await ImagePicker.launchImageLibraryAsync({ mediaTypes: ['images'], quality: 0.8 });
-    if (!result.canceled && result.assets[0]) {
-      setImageUri(result.assets[0].uri);
+    try {
+      const { status } = await ImagePicker.requestCameraRollPermissionsAsync();
+      if (status !== 'granted') {
+        setToast({ visible: true, msg: 'Permission required to access photos', type: 'error' });
+        return;
+      }
+      const result = await ImagePicker.launchImageLibraryAsync({ mediaTypes: ImagePicker.MediaTypeOptions.Images, quality: 0.8 });
+      if (!result.cancelled && result.uri) {
+        setImageUri(result.uri);
+      }
+    } catch (err) {
+      console.error('Image picker error:', err);
     }
   };
 
@@ -51,23 +56,53 @@ export default function NewAssetScreen({ navigation }: { navigation: NativeStack
     if (!validate()) { haptics.notificationError(); return; }
     haptics.impactMedium();
     setSaving(true);
-    const { error } = await supabase.from('assets').insert({
+
+    let imageUrl: string | null = null;
+    if (imageUri) {
+      try {
+        imageUrl = await uploadImage(imageUri, 'assets');
+        if (!imageUrl) {
+          setToast({ visible: true, msg: 'Image upload failed', type: 'error' });
+          setSaving(false);
+          haptics.notificationError();
+          return;
+        }
+      } catch (err) {
+        console.error('Image upload exception:', err);
+        setToast({ visible: true, msg: 'Image upload failed', type: 'error' });
+        setSaving(false);
+        haptics.notificationError();
+        return;
+      }
+    }
+
+    const payload = {
       asset_code: assetCode.trim(),
       name: name.trim(),
       type,
       location: location.trim() || null,
-      status: status ?? 'active',
-      image_url: imageUri,
-    });
-    setSaving(false);
-    if (error) {
+      status: status ? status.toLowerCase().replace(/\s+/g, '_') : 'active',
+      image_url: imageUrl,
+    };
+
+    try {
+      const { data, error } = await supabase.from('assets').insert(payload).select().single();
+      setSaving(false);
+      if (error) {
+        console.error('[NewAsset] Insert error:', error);
+        haptics.notificationError();
+        setToast({ visible: true, msg: `Failed: ${error.message}`, type: 'error' });
+        return;
+      }
+      haptics.notificationSuccess();
+      setToast({ visible: true, msg: 'Asset saved', type: 'success' });
+      setTimeout(() => navigation.goBack(), 500);
+    } catch (err) {
+      console.error('[NewAsset] Insert exception:', err);
+      setSaving(false);
       haptics.notificationError();
-      setToast({ visible: true, msg: 'Failed to save asset' });
-      return;
+      setToast({ visible: true, msg: 'Failed to save asset', type: 'error' });
     }
-    haptics.notificationSuccess();
-    setToast({ visible: true, msg: 'Asset created successfully' });
-    setTimeout(() => navigation.goBack(), 1200);
   };
 
   return (
@@ -116,11 +151,15 @@ export default function NewAssetScreen({ navigation }: { navigation: NativeStack
           <Text style={S.cancelText}>Cancel</Text>
         </Pressable>
         <Pressable onPress={handleSave} disabled={saving} style={({ pressed }) => [S.saveBtn, pressed && S.btnPressed, saving && S.btnDisabled]}>
-          <Check size={18} color="#FFF" strokeWidth={2.5} />
-          <Text style={S.saveText}>{saving ? 'Saving...' : 'Save Asset'}</Text>
+          {saving ? <ActivityIndicator size="small" color="#FFF" /> : (
+            <>
+              <Check size={18} color="#FFF" strokeWidth={2.5} />
+              <Text style={S.saveText}>Save Asset</Text>
+            </>
+          )}
         </Pressable>
       </View>
-      <Toast message={toast.msg} type="success" visible={toast.visible} onHide={() => setToast({ visible: false, msg: '' })} />
+      <Toast message={toast.msg} type={toast.type} visible={toast.visible} onHide={() => setToast({ visible: false, msg: '', type: 'success' })} />
     </SafeAreaView>
   );
 }
@@ -162,7 +201,7 @@ const S = StyleSheet.create({
   backText: { fontSize: 15, fontWeight: '600', color: C.ink },
   headerTitle: { fontSize: 18, fontWeight: '800', color: C.ink },
   scroll: { flex: 1 },
-  scrollContent: { padding: 20 },
+  scrollContent: { padding: 20, paddingBottom: 100 },
   form: { gap: 18 },
   field: { gap: 8 },
   fieldLabel: { fontSize: 14, fontWeight: '700', color: C.ink },
@@ -179,9 +218,9 @@ const S = StyleSheet.create({
   imagePlaceholderText: { fontSize: 14, fontWeight: '500', color: C.mutedLight },
   previewImage: { width: '100%', height: 160, resizeMode: 'cover' },
   footer: { flexDirection: 'row', gap: 12, padding: 20, borderTopWidth: 1, borderTopColor: C.borderLight, backgroundColor: '#FFF' },
-  cancelBtn: { flex: 1, minHeight: 50, borderRadius: 12, borderWidth: 1, borderColor: C.borderLight, alignItems: 'center', justifyContent: 'center' },
+  cancelBtn: { flex: 1, minHeight: 48, borderRadius: 12, borderWidth: 1, borderColor: C.borderLight, alignItems: 'center', justifyContent: 'center' },
   cancelText: { fontSize: 16, fontWeight: '600', color: C.mutedLight },
-  saveBtn: { flex: 1, minHeight: 50, borderRadius: 12, backgroundColor: C.primary, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8 },
+  saveBtn: { flex: 1, minHeight: 48, borderRadius: 12, backgroundColor: C.primary, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8 },
   saveText: { fontSize: 16, fontWeight: '700', color: '#FFF' },
   btnPressed: { opacity: 0.85 },
   btnDisabled: { opacity: 0.5 },
