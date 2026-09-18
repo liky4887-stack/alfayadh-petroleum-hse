@@ -7,6 +7,8 @@ interface SplashScreenProps {
 }
 
 export default function SplashScreen({ onFinish }: SplashScreenProps) {
+  const welcomeOpacity = useRef(new Animated.Value(0)).current;
+  const welcomeSlide = useRef(new Animated.Value(8)).current;
   const titleOpacity = useRef(new Animated.Value(0)).current;
   const titleSlide = useRef(new Animated.Value(12)).current;
   const subtitleOpacity = useRef(new Animated.Value(0)).current;
@@ -35,8 +37,10 @@ export default function SplashScreen({ onFinish }: SplashScreenProps) {
       animations.push(anim);
     };
 
-    run(titleOpacity, 1, 600, 0);
-    run(titleSlide, 0, 600, 0);
+    run(welcomeOpacity, 1, 500, 0);
+    run(welcomeSlide, 0, 500, 0);
+    run(titleOpacity, 1, 600, 300);
+    run(titleSlide, 0, 600, 300);
     run(subtitleOpacity, 1, 500, 250);
     run(subtitleSlide, 0, 500, 250);
     run(underlineScale, 1, 400, 500);
@@ -57,11 +61,21 @@ export default function SplashScreen({ onFinish }: SplashScreenProps) {
       <View style={S.container}>
         <Animated.View
           style={{
+            opacity: welcomeOpacity,
+            transform: [{ translateY: welcomeSlide }],
+            marginBottom: 14,
+          }}
+        >
+          <Text style={S.welcome}>WELCOME TO</Text>
+        </Animated.View>
+
+        <Animated.View
+          style={{
             opacity: titleOpacity,
             transform: [{ translateY: titleSlide }],
           }}
         >
-          <Text style={S.title}>ALFAYADH</Text>
+          <Text style={S.title}>FAIAD BERGIN</Text>
         </Animated.View>
 
         <Animated.View
@@ -70,7 +84,7 @@ export default function SplashScreen({ onFinish }: SplashScreenProps) {
             transform: [{ translateY: subtitleSlide }],
           }}
         >
-          <Text style={S.subtitle}>PETROLEUM · HSE</Text>
+          <Text style={S.subtitle}>OIL SERVICES</Text>
         </Animated.View>
 
         <View style={S.spacer32} />
@@ -104,8 +118,16 @@ const S = StyleSheet.create({
   spacer32: {
     height: 32,
   },
+  welcome: {
+    fontSize: 13,
+    fontWeight: '500',
+    color: '#94A3B8',
+    letterSpacing: 4,
+    textAlign: 'center',
+    textTransform: 'uppercase',
+  },
   title: {
-    fontSize: 34,
+    fontSize: 30,
     fontWeight: '800',
     color: '#0F172A',
     letterSpacing: 5,

@@ -33,6 +33,15 @@
         {
           "photosPermission": "Allow Alfayadh HSE to access your photos for safety reports."
         }
+      ],
+      [
+        "expo-splash-screen",
+        {
+          "backgroundColor": "#FFFFFF",
+          "image": "./assets/splash_blank.png",
+          "imageWidth": 1,
+          "resizeMode": "contain"
+        }
       ]
     ],
     "extra": {
@@ -41,11 +50,6 @@
       }
     },
     "owner": "liky488",
-    "icon": "./assets/icon.png",
-    "splash": {
-      "image": "./assets/splash_blank.png",
-      "resizeMode": "contain",
-      "backgroundColor": "#FFFFFF"
-    }
+    "icon": "./assets/icon.png"
   }
 }
