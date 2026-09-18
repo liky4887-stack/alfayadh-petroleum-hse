@@ -57,5 +57,5 @@ const S = StyleSheet.create({
     shadowOpacity: 0.05,
     shadowRadius: 2,
   },
-  text: { fontSize: 14, fontWeight: '600', flex: 1 },
+  text: { fontSize: 14, fontFamily: 'Chevalon-SemiBold', flex: 1 },
 });

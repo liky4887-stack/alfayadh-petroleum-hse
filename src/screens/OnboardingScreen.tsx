@@ -9,7 +9,7 @@ const { width: W } = Dimensions.get('window');
 const PAGES = [
   {
     id: '1',
-    photo: 'https://images.pexels.com/photos/35224901/pexels-photo-35224901.jpeg?auto=compress&cs=tinysrgb&h=650&w=940',
+    photo: require('../../assets/onboarding_1.jpg'),
     eyebrow: 'WELCOME',
     headline: 'Safety\nFirst,\nAlways.',
     body: 'The complete HSE platform built for oil services professionals in the field.',
@@ -18,7 +18,7 @@ const PAGES = [
   },
   {
     id: '2',
-    photo: 'https://images.pexels.com/photos/34421779/pexels-photo-34421779.jpeg?auto=compress&cs=tinysrgb&h=650&w=940',
+    photo: require('../../assets/onboarding_2.jpg'),
     eyebrow: 'TRACK EVERYTHING',
     headline: 'Assets,\nActions &\nReports.',
     body: 'Log incidents, manage equipment and track corrective actions — all in one place.',
@@ -27,7 +27,7 @@ const PAGES = [
   },
   {
     id: '3',
-    photo: 'https://images.pexels.com/photos/34442635/pexels-photo-34442635.jpeg?auto=compress&cs=tinysrgb&h=650&w=940',
+    photo: require('../../assets/onboarding_3.jpg'),
     eyebrow: 'READY',
     headline: 'Let\'s Get\nStarted.',
     body: 'Sign in to your account and start managing your team\'s safety today.',
@@ -76,7 +76,7 @@ export default function OnboardingScreen({ onFinish }: OnboardingScreenProps) {
   const page = PAGES[currentIndex]!;
 
   const renderPage = ({ item }: { item: Page }) => (
-    <ImageBackground source={{ uri: item.photo }} style={[S.page, { width: W }]} resizeMode="cover">
+    <ImageBackground source={item.photo} style={[S.page, { width: W }]} resizeMode="cover">
       <View style={S.photoOverlay} />
     </ImageBackground>
   );
@@ -147,14 +147,14 @@ const S = StyleSheet.create({
   },
   eyebrow: {
     fontSize: 11,
-    fontWeight: '800',
+    fontFamily: 'Chevalon-ExtraBold',
     color: '#0EA5E9',
     letterSpacing: 4,
     marginBottom: 14,
   },
   headline: {
     fontSize: 52,
-    fontWeight: '800',
+    fontFamily: 'Chevalon-ExtraBold',
     color: '#FFFFFF',
     letterSpacing: -1.5,
     lineHeight: 58,
@@ -162,7 +162,7 @@ const S = StyleSheet.create({
   },
   body: {
     fontSize: 15,
-    fontWeight: '400',
+    fontFamily: 'Chevalon-Regular',
     color: 'rgba(255,255,255,0.72)',
     lineHeight: 22,
     maxWidth: '88%',
@@ -195,6 +195,6 @@ const S = StyleSheet.create({
     elevation: 8,
   },
   ctaLast: { backgroundColor: '#FFFFFF' },
-  ctaText: { fontSize: 15, fontWeight: '700', color: '#FFFFFF' },
+  ctaText: { fontSize: 15, fontFamily: 'Chevalon-Bold', color: '#FFFFFF' },
   ctaTextLast: { color: '#0A2540' },
 });

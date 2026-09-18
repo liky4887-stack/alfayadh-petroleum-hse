@@ -1,108 +1,173 @@
 import { useEffect, useRef } from 'react';
-import { View, Text, StyleSheet, Animated, Easing } from 'react-native';
+import {
+  View,
+  Text,
+  StyleSheet,
+  Animated,
+  Easing,
+  ActivityIndicator,
+  Dimensions,
+} from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 interface SplashScreenProps {
   onFinish?: () => void;
 }
 
+const { height: SCREEN_H } = Dimensions.get('window');
+
+const C = {
+  bg: '#0A2540',
+  text: '#FFFFFF',
+  accent: '#0EA5E9',
+};
+
 export default function SplashScreen({ onFinish }: SplashScreenProps) {
-  const logoScale = useRef(new Animated.Value(0.78)).current;
-  const logoOpacity = useRef(new Animated.Value(0)).current;
-  const wordmarkOpacity = useRef(new Animated.Value(0)).current;
-  const wordmarkSlide = useRef(new Animated.Value(10)).current;
-  const footerOpacity = useRef(new Animated.Value(0)).current;
+  // Text starts at center (0) and rises up to the top (-offset)
+  const riseUp = useRef(new Animated.Value(0)).current;
+  const scale = useRef(new Animated.Value(0.85)).current;
+  const opacity = useRef(new Animated.Value(0)).current;
+  const subtitleOpacity = useRef(new Animated.Value(0)).current;
+  const spinnerOpacity = useRef(new Animated.Value(0)).current;
 
   useEffect(() => {
     const anims: Animated.CompositeAnimation[] = [];
 
-    const launch = (
-      value: Animated.Value,
-      toValue: number,
-      duration: number,
-      delay: number,
-      easing?: (v: number) => number,
-    ) => {
-      const a = Animated.timing(value, {
-        toValue,
-        duration,
-        delay,
-        easing: easing ?? Easing.out(Easing.cubic),
+    // Step 1: fade in + subtle scale at center
+    const fadeIn = Animated.parallel([
+      Animated.timing(opacity, {
+        toValue: 1,
+        duration: 500,
+        easing: Easing.out(Easing.quad),
         useNativeDriver: true,
-      });
-      a.start();
-      anims.push(a);
-    };
+      }),
+      Animated.timing(scale, {
+        toValue: 1,
+        duration: 500,
+        easing: Easing.out(Easing.cubic),
+        useNativeDriver: true,
+      }),
+    ]);
 
-    launch(logoOpacity, 1, 480, 0);
-    launch(logoScale, 1.0, 600, 0, Easing.out(Easing.back(1.4)));
-    launch(wordmarkOpacity, 1, 400, 360);
-    launch(wordmarkSlide, 0, 400, 360);
-    launch(footerOpacity, 1, 400, 800);
+    // Step 2: rise up from center to top
+    const rise = Animated.timing(riseUp, {
+      toValue: 1,
+      duration: 900,
+      delay: 400, // wait for fade-in to complete
+      easing: Easing.inOut(Easing.cubic),
+      useNativeDriver: true,
+    });
 
-    const timer = setTimeout(() => onFinish?.(), 1800);
+    // Step 3: subtitle appears after text has risen
+    const subtitle = Animated.timing(subtitleOpacity, {
+      toValue: 1,
+      duration: 400,
+      delay: 1100,
+      easing: Easing.out(Easing.quad),
+      useNativeDriver: true,
+    });
 
+    // Step 4: spinner fades in
+    const spinner = Animated.timing(spinnerOpacity, {
+      toValue: 1,
+      duration: 400,
+      delay: 1300,
+      easing: Easing.out(Easing.quad),
+      useNativeDriver: true,
+    });
+
+    fadeIn.start();
+    rise.start();
+    subtitle.start();
+    spinner.start();
+    anims.push(fadeIn, rise, subtitle, spinner);
+
+    const timer = setTimeout(() => onFinish?.(), 2400);
     return () => {
       clearTimeout(timer);
       anims.forEach((a) => a.stop());
     };
   }, [onFinish]);
 
+  // Translate Y: 0 (center) → -25% of screen height (top area)
+  const translateY = riseUp.interpolate({
+    inputRange: [0, 1],
+    outputRange: [0, -SCREEN_H * 0.28],
+  });
+
   return (
     <View style={S.screen}>
       <SafeAreaView style={S.inner} edges={['top', 'bottom']}>
-        <View style={S.center}>
-          <Animated.View style={[S.logoWrap, { opacity: logoOpacity, transform: [{ scale: logoScale }] }]}>
-            <View style={S.logoOuter}>
-              <View style={S.logoInner}>
-                <Text style={S.logoInitials}>FB</Text>
-                <Text style={S.logoSub}>OIL</Text>
-              </View>
-            </View>
-          </Animated.View>
+        {/* Text block — starts at center, rises to top */}
+        <Animated.View
+          style={[
+            S.textBlock,
+            {
+              opacity,
+              transform: [
+                { translateY },
+                { scale },
+              ],
+            },
+          ]}
+        >
+          <Text style={S.brandName}>ALFAYADH</Text>
+          <Animated.Text style={[S.brandSubline, { opacity: subtitleOpacity }]}>
+            PETROLEUM · HSE
+          </Animated.Text>
+        </Animated.View>
 
-          <Animated.View style={{ opacity: wordmarkOpacity, transform: [{ translateY: wordmarkSlide }] }}>
-            <Text style={S.wordmark}>FAIAD BERGIN</Text>
-            <Text style={S.wordmarkSub}>HSE MANAGEMENT</Text>
-          </Animated.View>
-        </View>
-
-        <Animated.View style={[S.footer, { opacity: footerOpacity }]}>
-          <Text style={S.footerFrom}>from</Text>
-          <Text style={S.footerBrand}>Faiad Bergin Oil Services</Text>
+        {/* Bottom spinner */}
+        <Animated.View style={[S.bottom, { opacity: spinnerOpacity }]}>
+          <ActivityIndicator size="small" color={C.accent} />
         </Animated.View>
       </SafeAreaView>
     </View>
   );
 }
 
-const BRAND = '#0A2540';
-const ACCENT = '#0EA5E9';
-
 const S = StyleSheet.create({
-  screen: { flex: 1, backgroundColor: BRAND },
-  inner: { flex: 1, justifyContent: 'space-between', alignItems: 'center' },
-  center: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: 28 },
-  logoWrap: { alignItems: 'center', justifyContent: 'center' },
-  logoOuter: {
-    width: 108,
-    height: 108,
-    borderRadius: 28,
-    backgroundColor: ACCENT,
+  screen: {
+    flex: 1,
+    backgroundColor: C.bg,
+  },
+  inner: {
+    flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
-    shadowColor: ACCENT,
-    shadowOpacity: 0.45,
-    shadowRadius: 24,
-    shadowOffset: { width: 0, height: 8 },
-    elevation: 12,
   },
-  logoInner: { alignItems: 'center', justifyContent: 'center' },
-  logoInitials: { fontSize: 38, fontWeight: '800', color: '#FFFFFF', letterSpacing: 1 },
-  logoSub: { fontSize: 10, fontWeight: '700', color: 'rgba(255,255,255,0.7)', letterSpacing: 3, marginTop: -4 },
-  wordmark: { fontSize: 22, fontWeight: '800', color: '#FFFFFF', letterSpacing: 3, textAlign: 'center' },
-  wordmarkSub: { fontSize: 10, fontWeight: '600', color: 'rgba(255,255,255,0.5)', letterSpacing: 3, textAlign: 'center', marginTop: 5 },
-  footer: { paddingBottom: 36, alignItems: 'center', gap: 4 },
-  footerFrom: { fontSize: 12, color: 'rgba(255,255,255,0.4)', fontWeight: '400' },
-  footerBrand: { fontSize: 13, color: 'rgba(255,255,255,0.65)', fontWeight: '600', letterSpacing: 0.3 },
+  // Absolute positioning so translateY works cleanly
+  textBlock: {
+    position: 'absolute',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  brandName: {
+    fontFamily: 'Chevalon-ExtraBold',
+    fontSize: 44,
+    letterSpacing: 4,
+    color: C.text,
+    lineHeight: 52,
+    textAlign: 'center',
+    includeFontPadding: false,
+    marginEnd: -4,
+  },
+  brandSubline: {
+    fontFamily: 'Chevalon-Medium',
+    fontSize: 17,
+    letterSpacing: 3,
+    color: C.accent,
+    marginTop: 8,
+    textAlign: 'center',
+    includeFontPadding: false,
+    marginEnd: -3,
+  },
+  bottom: {
+    position: 'absolute',
+    bottom: 60,
+    left: 0,
+    right: 0,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
 });

@@ -44,7 +44,7 @@ export function Button({ label, onPress, variant = 'primary', disabled, fullWidt
       })}
     >
       {icon}
-      <Text style={{ color: textColor, fontSize: 16, fontWeight: '700' }}>{label}</Text>
+      <Text style={{ color: textColor, fontSize: 16, fontFamily: 'Chevalon-Bold' }}>{label}</Text>
     </Pressable>
   );
 }
@@ -74,7 +74,7 @@ export function Chip({ label, selected, onPress, color }: ChipProps) {
       <Text style={{
         color: selected ? accent : theme.textDim,
         fontSize: 14,
-        fontWeight: selected ? '700' : '400',
+        fontFamily: selected ? 'Chevalon-Bold' : 'Chevalon-Regular',
       }}>
         {label}
       </Text>
@@ -94,7 +94,7 @@ export function StatusBadge({ status }: { status: 'open' | 'closed' }) {
       borderColor: `${color}55`,
       backgroundColor: isOpen ? theme.warningLight : theme.successLight,
     }}>
-      <Text style={{ color, fontSize: 11, fontWeight: '700', fontVariant: ['tabular-nums'] }}>
+      <Text style={{ color, fontSize: 11, fontFamily: 'Chevalon-Bold', fontVariant: ['tabular-nums'] }}>
         {isOpen ? 'Open' : 'Closed'}
       </Text>
     </View>
@@ -140,7 +140,7 @@ export function TextInput({ value, onChangeText, placeholder, multiline, numberO
         style={{
           color: theme.text,
           fontSize: 15,
-          fontWeight: '400',
+          fontFamily: 'Chevalon-Regular',
           minHeight: multiline ? 100 : undefined,
         }}
       />

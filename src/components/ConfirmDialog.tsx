@@ -72,14 +72,14 @@ export function useConfirm() {
 const S = StyleSheet.create({
   overlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.5)', alignItems: 'center', justifyContent: 'center', padding: 24 },
   card: { backgroundColor: '#FFF', borderRadius: 20, padding: 24, width: '100%', gap: 14 },
-  title: { fontSize: 18, fontWeight: '800', color: C.ink },
-  message: { fontSize: 15, fontWeight: '500', color: C.muted, lineHeight: 22 },
+  title: { fontSize: 18, fontFamily: 'Chevalon-ExtraBold', color: C.ink },
+  message: { fontSize: 15, fontFamily: 'Chevalon-Medium', color: C.muted, lineHeight: 22 },
   btnRow: { flexDirection: 'row', gap: 12, marginTop: 8 },
   cancelBtn: { flex: 1, paddingVertical: 14, borderRadius: 14, borderWidth: 1, borderColor: C.border, alignItems: 'center', justifyContent: 'center' },
-  cancelText: { fontSize: 16, fontWeight: '600', color: C.muted },
+  cancelText: { fontSize: 16, fontFamily: 'Chevalon-SemiBold', color: C.muted },
   confirmBtn: { flex: 1, paddingVertical: 14, borderRadius: 14, alignItems: 'center', justifyContent: 'center' },
   destructiveBtn: { backgroundColor: C.red },
   normalBtn: { backgroundColor: C.accent },
-  confirmText: { fontSize: 16, fontWeight: '700', color: '#FFF' },
+  confirmText: { fontSize: 16, fontFamily: 'Chevalon-Bold', color: '#FFF' },
   pressed: { opacity: 0.7 },
 });

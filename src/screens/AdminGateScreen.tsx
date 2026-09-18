@@ -97,16 +97,16 @@ export default function AdminGateScreen({ navigation }: { navigation: any }) {
 const S = StyleSheet.create({
   screen: { flex: 1, backgroundColor: theme.bg },
   body: { flex: 1, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 24, gap: 16 },
-  title: { fontSize: 24, fontWeight: '800', color: theme.text, letterSpacing: -0.3 },
-  subtitle: { fontSize: 15, fontWeight: '500', color: theme.textDim, textAlign: 'center' },
+  title: { fontSize: 24, fontFamily: 'Chevalon-ExtraBold', color: theme.text, letterSpacing: -0.3 },
+  subtitle: { fontSize: 15, fontFamily: 'Chevalon-Medium', color: theme.textDim, textAlign: 'center' },
   pinRow: { flexDirection: 'row', gap: 16, marginTop: 20 },
   pinBox: {
     width: 56, height: 64, borderRadius: 14, borderWidth: 2, borderColor: theme.border,
-    backgroundColor: theme.card, fontSize: 28, fontWeight: '800', color: theme.text, textAlign: 'center',
+    backgroundColor: theme.card, fontSize: 28, fontFamily: 'Chevalon-ExtraBold', color: theme.text, textAlign: 'center',
   },
   pinBoxError: { borderColor: theme.danger },
-  errorText: { fontSize: 14, fontWeight: '600', color: theme.danger, textAlign: 'center' },
+  errorText: { fontSize: 14, fontFamily: 'Chevalon-SemiBold', color: theme.danger, textAlign: 'center' },
   cancelBtn: { marginTop: 20, paddingVertical: 10, paddingHorizontal: 24 },
-  cancelText: { fontSize: 15, fontWeight: '600', color: theme.textDim },
+  cancelText: { fontSize: 15, fontFamily: 'Chevalon-SemiBold', color: theme.textDim },
   pressed: { opacity: 0.7 },
 });

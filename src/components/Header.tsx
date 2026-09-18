@@ -116,9 +116,9 @@ const S = StyleSheet.create({
   },
   left: { flexDirection: 'row', alignItems: 'center', gap: 8, minWidth: 100 },
   backBtn: { flexDirection: 'row', alignItems: 'center', gap: 4 },
-  backText: { color: '#0F172A', fontSize: 14, fontWeight: '600' },
-  adminText: { color: '#0F172A', fontSize: 13, fontWeight: '600' },
-  title: { fontWeight: '800', fontSize: 20, color: '#0F172A', letterSpacing: 2, flex: 1, textAlign: 'center', marginEnd: 8 },
+  backText: { color: '#0F172A', fontSize: 14, fontFamily: 'Chevalon-SemiBold' },
+  adminText: { color: '#0F172A', fontSize: 13, fontFamily: 'Chevalon-SemiBold' },
+  title: { fontFamily: 'Chevalon-ExtraBold', fontSize: 20, color: '#0F172A', letterSpacing: 2, flex: 1, textAlign: 'center', marginEnd: 8 },
   right: { flexDirection: 'row', alignItems: 'center', gap: 8, minWidth: 100, justifyContent: 'flex-end' },
   onlineDot: { width: 8, height: 8, borderRadius: 4, backgroundColor: '#16A34A' },
   offlinePill: {
@@ -129,7 +129,7 @@ const S = StyleSheet.create({
     borderColor: '#DC262644',
     backgroundColor: '#FCE8E6',
   },
-  offlineText: { color: '#DC2626', fontSize: 11, fontWeight: '600' },
+  offlineText: { color: '#DC2626', fontSize: 11, fontFamily: 'Chevalon-SemiBold' },
   pendingPill: {
     paddingVertical: 4,
     paddingHorizontal: 10,
@@ -138,7 +138,7 @@ const S = StyleSheet.create({
     borderColor: '#0EA5E944',
     backgroundColor: '#E0F2FE',
   },
-  pendingText: { color: '#0EA5E9', fontSize: 11, fontWeight: '600' },
+  pendingText: { color: '#0EA5E9', fontSize: 11, fontFamily: 'Chevalon-SemiBold' },
   syncPill: {
     paddingVertical: 4,
     paddingHorizontal: 10,
@@ -147,6 +147,6 @@ const S = StyleSheet.create({
     borderColor: '#0EA5E944',
     backgroundColor: '#E0F2FE',
   },
-  syncText: { color: '#0EA5E9', fontSize: 11, fontWeight: '600' },
+  syncText: { color: '#0EA5E9', fontSize: 11, fontFamily: 'Chevalon-SemiBold' },
   pressed: { opacity: 0.7 },
 });

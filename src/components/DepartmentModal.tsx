@@ -41,8 +41,8 @@ export function DepartmentModal({ visible, onClose, onSelect, current }: Departm
 const S = StyleSheet.create({
   overlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.4)', alignItems: 'center', justifyContent: 'center', padding: 24 },
   card: { backgroundColor: '#FFFFFF', borderRadius: 16, padding: 20, width: '100%', gap: 4 },
-  title: { fontSize: 18, fontWeight: '700', color: '#0F172A' },
-  subtitle: { fontSize: 13, fontWeight: '400', color: '#64748B', marginBottom: 12 },
+  title: { fontSize: 18, fontFamily: 'Chevalon-Bold', color: '#0F172A' },
+  subtitle: { fontSize: 13, fontFamily: 'Chevalon-Regular', color: '#64748B', marginBottom: 12 },
   row: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -56,7 +56,7 @@ const S = StyleSheet.create({
     marginTop: 8,
   },
   rowActive: { borderColor: '#0EA5E9', backgroundColor: '#E0F2FE' },
-  label: { fontSize: 15, fontWeight: '500', color: '#0F172A' },
-  labelActive: { fontWeight: '700', color: '#0EA5E9' },
+  label: { fontSize: 15, fontFamily: 'Chevalon-Medium', color: '#0F172A' },
+  labelActive: { fontFamily: 'Chevalon-Bold', color: '#0EA5E9' },
   pressed: { opacity: 0.7 },
 });

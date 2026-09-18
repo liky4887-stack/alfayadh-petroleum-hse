@@ -47,7 +47,7 @@ const S = StyleSheet.create({
   fullScreen: { flex: 1, backgroundColor: '#FFFFFF' },
   mediaHeader: { height: 72, paddingHorizontal: 16, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
   doneBtn: { minHeight: 44, paddingHorizontal: 12, justifyContent: 'center', borderRadius: 10 },
-  doneText: { fontSize: 17, fontWeight: '700', color: C.ink },
+  doneText: { fontSize: 17, fontFamily: 'Chevalon-Bold', color: C.ink },
   mediaViewer: { flex: 1, marginHorizontal: 16, backgroundColor: '#E8E6E1', borderRadius: 20, overflow: 'hidden', position: 'relative', marginBottom: 8 },
   mediaImage: { width: '100%', height: '100%', resizeMode: 'cover' },
   mediaActions: { position: 'absolute', bottom: 16, left: 16, right: 16, flexDirection: 'row', justifyContent: 'space-between' },

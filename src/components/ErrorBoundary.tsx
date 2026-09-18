@@ -37,9 +37,9 @@ const S = StyleSheet.create({
   screen: { flex: 1, backgroundColor: C.canvas, alignItems: 'center', justifyContent: 'center', padding: 24 },
   card: { backgroundColor: '#FFF', borderRadius: 20, padding: 28, alignItems: 'center', gap: 14, borderWidth: 1, borderColor: C.border, width: '100%' },
   emoji: { fontSize: 48 },
-  title: { fontSize: 20, fontWeight: '800', color: C.ink },
-  message: { fontSize: 14, fontWeight: '500', color: C.muted, textAlign: 'center', lineHeight: 20 },
+  title: { fontSize: 20, fontFamily: 'Chevalon-ExtraBold', color: C.ink },
+  message: { fontSize: 14, fontFamily: 'Chevalon-Medium', color: C.muted, textAlign: 'center', lineHeight: 20 },
   btn: { backgroundColor: C.accent, paddingVertical: 14, paddingHorizontal: 32, borderRadius: 14, marginTop: 8 },
-  btnText: { color: '#FFF', fontSize: 16, fontWeight: '700' },
+  btnText: { color: '#FFF', fontSize: 16, fontFamily: 'Chevalon-Bold' },
   pressed: { opacity: 0.7 },
 });

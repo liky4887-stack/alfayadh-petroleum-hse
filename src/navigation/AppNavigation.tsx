@@ -164,7 +164,7 @@ const S = StyleSheet.create({
   },
   tabLabel: {
     fontSize: 10,
-    fontWeight: '600',
+    fontFamily: 'Chevalon-SemiBold',
   },
   tabItem: {
     minHeight: 56,

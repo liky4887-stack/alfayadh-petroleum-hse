@@ -88,10 +88,10 @@ const S = StyleSheet.create({
   screen: { flex: 1, backgroundColor: theme.bg },
   scroll: { flex: 1 },
   body: { padding: 20, gap: 24 },
-  label: { color: theme.text, fontSize: 16, fontWeight: '700', marginBottom: 6 },
+  label: { color: theme.text, fontSize: 16, fontFamily: 'Chevalon-Bold', marginBottom: 6 },
   desc: { color: theme.textDim, fontSize: 14, lineHeight: 24 },
   field: { gap: 10 },
-  fieldLabel: { color: theme.textDim, fontSize: 13, fontWeight: '600' },
+  fieldLabel: { color: theme.textDim, fontSize: 13, fontFamily: 'Chevalon-SemiBold' },
   cameraBtn: {
     flexDirection: 'row', alignItems: 'center', gap: 10,
     paddingVertical: 14, paddingHorizontal: 16,
