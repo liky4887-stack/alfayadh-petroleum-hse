@@ -1,14 +1,16 @@
-import { useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { StatusBar } from 'expo-status-bar';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { I18nManager } from 'react-native';
 import AppNavigation from '@/navigation/AppNavigation';
+import SplashScreen from '@/screens/SplashScreen';
 import { useHSEStore } from '@/lib/store';
 import { ErrorBoundary } from '@/components/ErrorBoundary';
 import { I18nProvider } from '@/lib/i18n';
 import { DepartmentProvider } from '@/lib/department';
 
 export default function App() {
+  const [showSplash, setShowSplash] = useState(true);
   const subscribeToReports = useHSEStore((s) => s.subscribeToReports);
   const flushQueue = useHSEStore((s) => s.flushQueue);
 
@@ -18,6 +20,15 @@ export default function App() {
     flushQueue();
     return unsub;
   }, [subscribeToReports, flushQueue]);
+
+  if (showSplash) {
+    return (
+      <SafeAreaProvider>
+        <SplashScreen onFinish={() => setShowSplash(false)} />
+        <StatusBar style="dark" />
+      </SafeAreaProvider>
+    );
+  }
 
   return (
     <SafeAreaProvider>
