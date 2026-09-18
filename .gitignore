@@ -22,3 +22,8 @@ dist-ssr
 *.sw?
 .env
 .expo/
+
+# Ignore native build cache — prevents EAS cache poisoning
+android/build/
+android/app/build/
+.expo/
