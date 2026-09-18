@@ -11,7 +11,7 @@ export default function SplashScreen({ onFinish }: SplashScreenProps) {
   const titleSlide = useRef(new Animated.Value(12)).current;
   const subtitleOpacity = useRef(new Animated.Value(0)).current;
   const subtitleSlide = useRef(new Animated.Value(12)).current;
-  const underlineWidth = useRef(new Animated.Value(0)).current;
+  const underlineScale = useRef(new Animated.Value(0)).current;
   const loaderOpacity = useRef(new Animated.Value(0)).current;
 
   useEffect(() => {
@@ -39,7 +39,7 @@ export default function SplashScreen({ onFinish }: SplashScreenProps) {
     run(titleSlide, 0, 600, 0);
     run(subtitleOpacity, 1, 500, 250);
     run(subtitleSlide, 0, 500, 250);
-    run(underlineWidth, 60, 400, 500);
+    run(underlineScale, 1, 400, 500);
     run(loaderOpacity, 1, 400, 800);
 
     const timer = setTimeout(() => {
@@ -76,7 +76,7 @@ export default function SplashScreen({ onFinish }: SplashScreenProps) {
         <View style={S.spacer32} />
 
         <Animated.View
-          style={[S.underline, { width: underlineWidth }]}
+          style={[S.underline, { transform: [{ scaleX: underlineScale }] }]}
         />
 
         <Animated.View
@@ -121,6 +121,7 @@ const S = StyleSheet.create({
   },
   underline: {
     height: 2,
+    width: 60,
     backgroundColor: '#0EA5E9',
     borderRadius: 1,
     alignSelf: 'center',
