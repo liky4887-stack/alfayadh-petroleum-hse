@@ -7,8 +7,6 @@ interface SplashScreenProps {
 }
 
 export default function SplashScreen({ onFinish }: SplashScreenProps) {
-  const logoScale = useRef(new Animated.Value(0.85)).current;
-  const logoOpacity = useRef(new Animated.Value(0)).current;
   const titleOpacity = useRef(new Animated.Value(0)).current;
   const titleSlide = useRef(new Animated.Value(12)).current;
   const subtitleOpacity = useRef(new Animated.Value(0)).current;
@@ -37,14 +35,12 @@ export default function SplashScreen({ onFinish }: SplashScreenProps) {
       animations.push(anim);
     };
 
-    run(logoScale, 1.0, 600, 0);
-    run(logoOpacity, 1, 600, 0);
-    run(titleOpacity, 1, 500, 300);
-    run(titleSlide, 0, 500, 300);
-    run(subtitleOpacity, 1, 500, 450);
-    run(subtitleSlide, 0, 500, 450);
-    run(underlineWidth, 60, 400, 700);
-    run(loaderOpacity, 1, 400, 1000);
+    run(titleOpacity, 1, 600, 0);
+    run(titleSlide, 0, 600, 0);
+    run(subtitleOpacity, 1, 500, 250);
+    run(subtitleSlide, 0, 500, 250);
+    run(underlineWidth, 60, 400, 500);
+    run(loaderOpacity, 1, 400, 800);
 
     const timer = setTimeout(() => {
       onFinish?.();
@@ -56,25 +52,9 @@ export default function SplashScreen({ onFinish }: SplashScreenProps) {
     };
   }, [onFinish]);
 
-  const logoStyle = StyleSheet.flatten([
-    S.logoBox,
-    {
-      transform: [{ scale: logoScale }],
-      opacity: logoOpacity,
-    },
-  ]) as any;
-
   return (
     <SafeAreaView style={S.screen} edges={['top', 'bottom']}>
       <View style={S.container}>
-        <Animated.View style={logoStyle}>
-          <View style={S.logoInner}>
-            <Text style={S.logoText}>A</Text>
-          </View>
-        </Animated.View>
-
-        <View style={S.spacer32} />
-
         <Animated.View
           style={{
             opacity: titleOpacity,
@@ -93,7 +73,7 @@ export default function SplashScreen({ onFinish }: SplashScreenProps) {
           <Text style={S.subtitle}>PETROLEUM · HSE</Text>
         </Animated.View>
 
-        <View style={S.spacer48} />
+        <View style={S.spacer32} />
 
         <Animated.View
           style={[S.underline, { width: underlineWidth }]}
@@ -121,46 +101,23 @@ const S = StyleSheet.create({
     justifyContent: 'center',
     paddingBottom: 100,
   },
-  logoBox: {
-    width: 180,
-    height: 180,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  logoInner: {
-    width: 120,
-    height: 120,
-    borderRadius: 28,
-    backgroundColor: '#0F172A',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  logoText: {
-    fontSize: 64,
-    fontWeight: '800',
-    color: '#FFFFFF',
-    letterSpacing: -2,
-  },
   spacer32: {
     height: 32,
   },
   title: {
-    fontSize: 32,
+    fontSize: 34,
     fontWeight: '800',
     color: '#0F172A',
-    letterSpacing: 4,
+    letterSpacing: 5,
     textAlign: 'center',
   },
   subtitle: {
     fontSize: 11,
     fontWeight: '700',
     color: '#0EA5E9',
-    letterSpacing: 3,
+    letterSpacing: 4,
     textAlign: 'center',
-    marginTop: 6,
-  },
-  spacer48: {
-    height: 48,
+    marginTop: 10,
   },
   underline: {
     height: 2,
