@@ -43,6 +43,7 @@
     "owner": "liky488",
     "icon": "./assets/icon.png",
     "splash": {
+      "image": "./assets/splash_blank.png",
       "resizeMode": "contain",
       "backgroundColor": "#FFFFFF"
     }
