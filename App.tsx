@@ -1,21 +1,19 @@
-import { useState, useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { StatusBar } from 'expo-status-bar';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { I18nManager } from 'react-native';
 import AppNavigation from '@/navigation/AppNavigation';
-import SplashScreen from '@/screens/SplashScreen';
-import OnboardingScreen from '@/screens/OnboardingScreen';
 import { useHSEStore } from '@/lib/store';
 import { ErrorBoundary } from '@/components/ErrorBoundary';
 import { I18nProvider } from '@/lib/i18n';
 import { DepartmentProvider } from '@/lib/department';
-
-type Stage = 'splash' | 'onboarding' | 'app';
+import SplashScreen from '@/screens/SplashScreen';
+import OnboardingScreen from '@/screens/OnboardingScreen';
 
 export default function App() {
-  const [stage, setStage] = useState<Stage>('splash');
   const subscribeToReports = useHSEStore((s) => s.subscribeToReports);
   const flushQueue = useHSEStore((s) => s.flushQueue);
+  const [phase, setPhase] = useState<'splash' | 'onboarding' | 'app'>('splash');
 
   useEffect(() => {
     I18nManager.forceRTL(false);
@@ -24,19 +22,19 @@ export default function App() {
     return unsub;
   }, [subscribeToReports, flushQueue]);
 
-  if (stage === 'splash') {
+  if (phase === 'splash') {
     return (
       <SafeAreaProvider>
-        <SplashScreen onFinish={() => setStage('onboarding')} />
+        <SplashScreen onFinish={() => setPhase('onboarding')} />
         <StatusBar style="light" />
       </SafeAreaProvider>
     );
   }
 
-  if (stage === 'onboarding') {
+  if (phase === 'onboarding') {
     return (
       <SafeAreaProvider>
-        <OnboardingScreen onFinish={() => setStage('app')} />
+        <OnboardingScreen onFinish={() => setPhase('app')} />
         <StatusBar style="light" />
       </SafeAreaProvider>
     );

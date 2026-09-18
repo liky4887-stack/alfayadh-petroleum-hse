@@ -1,188 +1,200 @@
 import { useRef, useState } from 'react';
-import {
-  View,
-  Text,
-  StyleSheet,
-  Pressable,
-  FlatList,
-  ImageBackground,
-  Dimensions,
-  SafeAreaView,
-} from 'react-native';
-import { BlurView } from 'expo-blur';
+import { View, Text, StyleSheet, Pressable, ImageBackground, FlatList, Dimensions, Animated } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useHapticFeedback } from '@/lib/haptics';
 
-const { width: SCREEN_W, height: SCREEN_H } = Dimensions.get('window');
+const { width: W } = Dimensions.get('window');
 
 const PAGES = [
   {
-    id: 1,
-    photo: require('../../assets/onboarding_1.jpg'),
-    smallLabel: 'WELCOME TO',
-    titleLine1: 'FAIAD BERGIN',
-    titleLine2: 'OIL SERVICES',
-    subtitle: 'Your complete HSE management platform.',
+    id: '1',
+    photo: 'https://images.pexels.com/photos/35224901/pexels-photo-35224901.jpeg?auto=compress&cs=tinysrgb&h=650&w=940',
+    eyebrow: 'WELCOME',
+    headline: 'Safety\nFirst,\nAlways.',
+    body: 'The complete HSE platform built for oil services professionals in the field.',
+    cta: 'Next',
+    isLast: false,
   },
   {
-    id: 2,
-    photo: require('../../assets/onboarding_2.jpg'),
-    smallLabel: 'BUILT FOR THE FIELD',
-    titleLine1: 'Safety.',
-    titleLine2: 'Precision. Excellence.',
-    subtitle: 'Track assets, actions, and inspections in real time.',
+    id: '2',
+    photo: 'https://images.pexels.com/photos/34421779/pexels-photo-34421779.jpeg?auto=compress&cs=tinysrgb&h=650&w=940',
+    eyebrow: 'TRACK EVERYTHING',
+    headline: 'Assets,\nActions &\nReports.',
+    body: 'Log incidents, manage equipment and track corrective actions — all in one place.',
+    cta: 'Next',
+    isLast: false,
   },
   {
-    id: 3,
-    photo: require('../../assets/onboarding_3.jpg'),
-    smallLabel: 'READY TO START',
-    titleLine1: 'Welcome to',
-    titleLine2: 'the dashboard.',
-    subtitle: 'Tap below to enter the app.',
+    id: '3',
+    photo: 'https://images.pexels.com/photos/34442635/pexels-photo-34442635.jpeg?auto=compress&cs=tinysrgb&h=650&w=940',
+    eyebrow: 'READY',
+    headline: 'Let\'s Get\nStarted.',
+    body: 'Sign in to your account and start managing your team\'s safety today.',
+    cta: 'Get Started',
     isLast: true,
   },
-] as const;
+];
+
+type Page = (typeof PAGES)[number];
 
 interface OnboardingScreenProps {
-  onFinish?: () => void;
-}
-
-function GlassBox({ children, intensity = 80 }: { children: React.ReactNode; intensity?: number }) {
-  return (
-    <View style={S.glassBox}>
-      <BlurView intensity={intensity} tint="dark" style={StyleSheet.absoluteFillObject} />
-      <View style={S.glassOverlay} />
-      <View style={S.glassInner}>{children}</View>
-    </View>
-  );
+  onFinish: () => void;
 }
 
 export default function OnboardingScreen({ onFinish }: OnboardingScreenProps) {
-  const [currentPage, setCurrentPage] = useState(0);
-  const listRef = useRef<FlatList>(null);
   const haptics = useHapticFeedback();
+  const [currentIndex, setCurrentIndex] = useState(0);
+  const flatListRef = useRef<FlatList<Page>>(null);
+  const ctaScale = useRef(new Animated.Value(1)).current;
 
-  const goToNext = () => {
+  const animateCta = (toValue: number) => {
+    Animated.spring(ctaScale, { toValue, friction: 8, tension: 80, useNativeDriver: true }).start();
+  };
+
+  const goNext = () => {
     haptics.impactMedium();
-    if (currentPage < PAGES.length - 1) {
-      const next = currentPage + 1;
-      listRef.current?.scrollToIndex({ index: next, animated: true });
-      setCurrentPage(next);
+    if (currentIndex < PAGES.length - 1) {
+      const next = currentIndex + 1;
+      flatListRef.current?.scrollToIndex({ index: next, animated: true });
+      setCurrentIndex(next);
     } else {
       haptics.notificationSuccess();
-      onFinish?.();
+      onFinish();
     }
   };
 
   const onScrollEnd = (e: any) => {
-    const idx = Math.round(e.nativeEvent.contentOffset.x / SCREEN_W);
-    if (idx !== currentPage) {
-      setCurrentPage(idx);
+    const idx = Math.round(e.nativeEvent.contentOffset.x / W);
+    if (idx !== currentIndex) {
+      setCurrentIndex(idx);
       haptics.selection();
     }
   };
 
-  const renderPage = ({ item }: { item: typeof PAGES[number] }) => (
-    <ImageBackground
-      source={item.photo}
-      style={{ width: SCREEN_W, height: SCREEN_H }}
-      resizeMode="cover"
-    >
-      <View style={S.scrim} />
-      <View style={S.bottomStack}>
-        <GlassBox intensity={60}>
-          <Text style={S.smallLabel}>{item.smallLabel}</Text>
-        </GlassBox>
-        <GlassBox intensity={90}>
-          <Text style={S.titleLine1}>{item.titleLine1}</Text>
-        </GlassBox>
-        <GlassBox intensity={90}>
-          <Text style={S.titleLine2}>{item.titleLine2}</Text>
-        </GlassBox>
-        <GlassBox intensity={70}>
-          <Text style={S.subtitle}>{item.subtitle}</Text>
-        </GlassBox>
-      </View>
+  const isLast = currentIndex === PAGES.length - 1;
+  const page = PAGES[currentIndex]!;
+
+  const renderPage = ({ item }: { item: Page }) => (
+    <ImageBackground source={{ uri: item.photo }} style={[S.page, { width: W }]} resizeMode="cover">
+      <View style={S.photoOverlay} />
     </ImageBackground>
   );
 
-  const isLast = currentPage === PAGES.length - 1;
-
   return (
-    <SafeAreaView style={S.screen} edges={['top', 'bottom']}>
+    <View style={S.screen}>
       <FlatList
-        ref={listRef}
-        data={PAGES as any}
+        ref={flatListRef}
+        data={PAGES}
+        keyExtractor={(item) => item.id}
         renderItem={renderPage}
-        keyExtractor={(item: any) => String(item.id)}
         horizontal
         pagingEnabled
         showsHorizontalScrollIndicator={false}
         onMomentumScrollEnd={onScrollEnd}
         bounces={false}
+        scrollEnabled
+        getItemLayout={(_, index) => ({ length: W, offset: W * index, index })}
+        style={StyleSheet.absoluteFill}
       />
-      <View style={S.footer} pointerEvents="box-none">
-        <View style={S.dotsRow}>
-          {PAGES.map((_, i) => (
-            <View key={i} style={[S.dot, i === currentPage && S.dotActive]} />
-          ))}
+
+      <SafeAreaView style={S.overlay} edges={['top', 'bottom']}>
+        <View style={S.topSection}>
+          <Text style={S.eyebrow}>{page.eyebrow}</Text>
+          <Text style={S.headline}>{page.headline}</Text>
+          <Text style={S.body}>{page.body}</Text>
         </View>
-        <Pressable
-          onPress={goToNext}
-          style={({ pressed }) => [isLast ? S.ctaBtn : S.arrowBtn, pressed && { opacity: 0.85 }]}
-        >
-          {isLast ? (
-            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
-              <Text style={S.ctaText}>Get Started</Text>
-              <Ionicons name="arrow-forward" size={18} color="#FFFFFF" />
-            </View>
-          ) : (
-            <Ionicons name="arrow-forward" size={26} color="#FFFFFF" />
-          )}
-        </Pressable>
-      </View>
-    </SafeAreaView>
+
+        <View style={S.bottomSection}>
+          <View style={S.dotsRow}>
+            {PAGES.map((_, i) => (
+              <View
+                key={i}
+                style={[S.dot, i === currentIndex && S.dotActive]}
+              />
+            ))}
+          </View>
+
+          <Animated.View style={{ transform: [{ scale: ctaScale }] }}>
+            <Pressable
+              onPress={goNext}
+              onPressIn={() => animateCta(0.96)}
+              onPressOut={() => animateCta(1)}
+              style={[S.cta, isLast && S.ctaLast]}
+            >
+              <Text style={[S.ctaText, isLast && S.ctaTextLast]}>{isLast ? 'Get Started' : 'Next'}</Text>
+              <Ionicons name="arrow-forward" size={18} color={isLast ? '#0A2540' : '#FFFFFF'} />
+            </Pressable>
+          </Animated.View>
+        </View>
+      </SafeAreaView>
+    </View>
   );
 }
 
 const S = StyleSheet.create({
-  screen: { flex: 1, backgroundColor: '#0F172A' },
-  scrim: { ...StyleSheet.absoluteFillObject, backgroundColor: 'rgba(0,0,0,0.25)' },
-  bottomStack: {
-    position: 'absolute', bottom: 130, left: 20, right: 20, gap: 10, alignItems: 'flex-start',
+  screen: { flex: 1, backgroundColor: '#0A2540' },
+  page: { flex: 1 },
+  photoOverlay: { ...StyleSheet.absoluteFillObject, backgroundColor: 'rgba(5, 12, 24, 0.58)' },
+  overlay: { flex: 1, justifyContent: 'space-between' },
+
+  topSection: {
+    paddingHorizontal: 28,
+    paddingTop: 32,
+    flex: 1,
+    justifyContent: 'flex-end',
+    paddingBottom: 40,
   },
-  glassBox: {
-    borderRadius: 16, overflow: 'hidden', borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.15)', backgroundColor: 'rgba(15,23,42,0.35)',
-    shadowColor: '#000', shadowOpacity: 0.3, shadowRadius: 14,
-    shadowOffset: { width: 0, height: 8 }, elevation: 10,
+  eyebrow: {
+    fontSize: 11,
+    fontWeight: '800',
+    color: '#0EA5E9',
+    letterSpacing: 4,
+    marginBottom: 14,
   },
-  glassOverlay: { ...StyleSheet.absoluteFillObject, backgroundColor: 'rgba(15,23,42,0.4)' },
-  glassInner: { paddingHorizontal: 18, paddingVertical: 12 },
-  smallLabel: {
-    color: '#FFFFFF', fontSize: 11, fontWeight: '700',
-    letterSpacing: 4, textTransform: 'uppercase',
+  headline: {
+    fontSize: 52,
+    fontWeight: '800',
+    color: '#FFFFFF',
+    letterSpacing: -1.5,
+    lineHeight: 58,
+    marginBottom: 18,
   },
-  titleLine1: { color: '#FFFFFF', fontSize: 24, fontWeight: '600' },
-  titleLine2: { color: '#FFFFFF', fontSize: 30, fontWeight: '700', lineHeight: 36 },
-  subtitle: { color: 'rgba(255,255,255,0.92)', fontSize: 14, fontWeight: '400', lineHeight: 20 },
-  footer: {
-    position: 'absolute', bottom: 0, left: 0, right: 0,
-    flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center',
-    paddingHorizontal: 32, paddingBottom: 44,
+  body: {
+    fontSize: 15,
+    fontWeight: '400',
+    color: 'rgba(255,255,255,0.72)',
+    lineHeight: 22,
+    maxWidth: '88%',
   },
-  dotsRow: { flexDirection: 'row', gap: 6 },
-  dot: { width: 8, height: 8, borderRadius: 4, backgroundColor: 'rgba(255,255,255,0.5)' },
-  dotActive: { width: 28, backgroundColor: '#FFFFFF' },
-  arrowBtn: {
-    width: 60, height: 60, borderRadius: 30,
-    backgroundColor: 'rgba(15,23,42,0.5)', alignItems: 'center', justifyContent: 'center',
-    borderWidth: 1, borderColor: 'rgba(255,255,255,0.35)',
+
+  bottomSection: {
+    paddingHorizontal: 28,
+    paddingBottom: 32,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: 16,
   },
-  ctaBtn: {
-    paddingHorizontal: 28, height: 60, borderRadius: 30,
-    backgroundColor: '#0EA5E9', flexDirection: 'row',
-    alignItems: 'center', justifyContent: 'center',
+  dotsRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
+  dot: { width: 8, height: 8, borderRadius: 4, backgroundColor: 'rgba(255,255,255,0.30)' },
+  dotActive: { width: 26, backgroundColor: '#FFFFFF' },
+
+  cta: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+    backgroundColor: '#0EA5E9',
+    paddingVertical: 16,
+    paddingHorizontal: 28,
+    borderRadius: 14,
+    shadowColor: '#0EA5E9',
+    shadowOpacity: 0.4,
+    shadowRadius: 14,
+    shadowOffset: { width: 0, height: 6 },
+    elevation: 8,
   },
-  ctaText: { color: '#FFFFFF', fontSize: 16, fontWeight: '700' },
+  ctaLast: { backgroundColor: '#FFFFFF' },
+  ctaText: { fontSize: 15, fontWeight: '700', color: '#FFFFFF' },
+  ctaTextLast: { color: '#0A2540' },
 });
