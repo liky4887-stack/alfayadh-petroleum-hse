@@ -31,7 +31,6 @@ import AssetDetailScreen from '@/screens/AssetDetailScreen';
 import ActionDetailScreen from '@/screens/ActionDetailScreen';
 import AdminLoginScreen from '@/screens/AdminLoginScreen';
 import FeedDetailScreen from '@/screens/FeedDetailScreen';
-import LoginScreen from '@/screens/LoginScreen';
 import AdminGateScreen from '@/screens/AdminGateScreen';
 import AdminPanelScreen from '@/screens/AdminPanelScreen';
 
@@ -121,65 +120,34 @@ function MainTabs() {
 }
 
 export default function Navigation() {
-  const [session, setSession] = useState<boolean | null>(null);
-
-  useEffect(() => {
-    let mounted = true;
-    (async () => {
-      try {
-        const { data } = await supabase.auth.getSession();
-        if (mounted) setSession(!!data?.session);
-      } catch {
-        if (mounted) setSession(false);
-      }
-    })();
-    const { data: listener } = supabase.auth.onAuthStateChange((_event, sess) => {
-      if (mounted) setSession(!!sess);
-    });
-    return () => { mounted = false; listener?.subscription?.unsubscribe(); };
-  }, []);
-
-  if (session === null) {
-    return (
-      <View style={S.loadingScreen}>
-        <ActivityIndicator size="large" color={C.accent} />
-      </View>
-    );
-  }
-
   return (
     <NavigationContainer>
-      <Stack.Navigator screenOptions={{ headerShown: false }}>
-        {session === false ? (
-          <Stack.Screen name="Login">
-            {(props: any) => <LoginScreen {...props} onLogin={() => setSession(true)} />}
-          </Stack.Screen>
-        ) : (
-          <>
-            <Stack.Screen name="MainTabs" component={MainTabs} />
-            <Stack.Screen name="Dashboard" component={DashboardScreen} />
-            <Stack.Screen name="SafeReport" component={SafeReportScreen} />
-            <Stack.Screen name="UnsafeReport" component={UnsafeReportScreen} />
-            <Stack.Screen name="Admin" component={AdminScreen} />
-            <Stack.Screen name="Media" component={MediaScreen} />
-            <Stack.Screen name="Feed" component={FeedScreen} />
-            <Stack.Screen name="NewAction" component={NewActionScreen} />
-            <Stack.Screen name="NewAsset" component={NewAssetScreen} />
-            <Stack.Screen name="Profile" component={ProfileScreen} />
-            <Stack.Screen name="MediaLibrary" component={MediaLibraryScreen} />
-            <Stack.Screen name="Help" component={HelpScreen} />
-            <Stack.Screen name="TrainingManage" component={TrainingManageScreen} />
-            <Stack.Screen name="NewCourse" component={NewCourseScreen} />
-            <Stack.Screen name="CourseDetail" component={CourseDetailScreen} />
-            <Stack.Screen name="ReportDetail" component={ReportDetailScreen} />
-            <Stack.Screen name="AssetDetail" component={AssetDetailScreen} />
-            <Stack.Screen name="ActionDetail" component={ActionDetailScreen} />
-            <Stack.Screen name="AdminGate" component={AdminGateScreen} />
-            <Stack.Screen name="AdminLogin" component={AdminLoginScreen} />
-            <Stack.Screen name="AdminPanel" component={AdminPanelScreen} />
-            <Stack.Screen name="FeedDetail" component={FeedDetailScreen} />
-          </>
-        )}
+      <Stack.Navigator
+        screenOptions={{ headerShown: false }}
+        initialRouteName="MainTabs"
+      >
+        <Stack.Screen name="MainTabs" component={MainTabs} />
+        <Stack.Screen name="Dashboard" component={DashboardScreen} />
+        <Stack.Screen name="SafeReport" component={SafeReportScreen} />
+        <Stack.Screen name="UnsafeReport" component={UnsafeReportScreen} />
+        <Stack.Screen name="Admin" component={AdminScreen} />
+        <Stack.Screen name="Media" component={MediaScreen} />
+        <Stack.Screen name="Feed" component={FeedScreen} />
+        <Stack.Screen name="NewAction" component={NewActionScreen} />
+        <Stack.Screen name="NewAsset" component={NewAssetScreen} />
+        <Stack.Screen name="Profile" component={ProfileScreen} />
+        <Stack.Screen name="MediaLibrary" component={MediaLibraryScreen} />
+        <Stack.Screen name="Help" component={HelpScreen} />
+        <Stack.Screen name="TrainingManage" component={TrainingManageScreen} />
+        <Stack.Screen name="NewCourse" component={NewCourseScreen} />
+        <Stack.Screen name="CourseDetail" component={CourseDetailScreen} />
+        <Stack.Screen name="ReportDetail" component={ReportDetailScreen} />
+        <Stack.Screen name="AssetDetail" component={AssetDetailScreen} />
+        <Stack.Screen name="ActionDetail" component={ActionDetailScreen} />
+        <Stack.Screen name="AdminGate" component={AdminGateScreen} />
+        <Stack.Screen name="AdminLogin" component={AdminLoginScreen} />
+        <Stack.Screen name="AdminPanel" component={AdminPanelScreen} />
+        <Stack.Screen name="FeedDetail" component={FeedDetailScreen} />
       </Stack.Navigator>
     </NavigationContainer>
   );
