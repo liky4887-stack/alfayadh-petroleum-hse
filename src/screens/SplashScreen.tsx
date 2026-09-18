@@ -8,11 +8,17 @@ import {
   ImageBackground,
   Dimensions,
   SafeAreaView,
+  Platform,
 } from 'react-native';
+import { BlurView } from 'expo-blur';
 import { Ionicons } from '@expo/vector-icons';
 import { useHapticFeedback } from '@/lib/haptics';
 
 const { width: SCREEN_W, height: SCREEN_H } = Dimensions.get('window');
+
+const FONT_REGULAR = Platform.select({ ios: 'System', android: 'sans-serif' });
+const FONT_MEDIUM = Platform.select({ ios: 'System', android: 'sans-serif-medium' });
+const FONT_BOLD = Platform.select({ ios: 'System', android: 'sans-serif-medium' });
 
 const PAGES = [
   {
@@ -44,6 +50,26 @@ const PAGES = [
 
 interface SplashScreenProps {
   onFinish?: () => void;
+}
+
+function GlassBox({
+  children,
+  intensity = 80,
+}: {
+  children: React.ReactNode;
+  intensity?: number;
+}) {
+  return (
+    <View style={S.glassBox}>
+      <BlurView
+        intensity={intensity}
+        tint="dark"
+        style={StyleSheet.absoluteFillObject}
+      />
+      <View style={S.glassOverlay} />
+      <View style={S.glassInner}>{children}</View>
+    </View>
+  );
 }
 
 export default function SplashScreen({ onFinish }: SplashScreenProps) {
@@ -78,11 +104,23 @@ export default function SplashScreen({ onFinish }: SplashScreenProps) {
       resizeMode="cover"
     >
       <View style={S.scrim} />
-      <View style={S.bottomContent}>
-        <Text style={S.smallLabel}>{item.smallLabel}</Text>
-        <Text style={S.titleLine1}>{item.titleLine1}</Text>
-        <Text style={S.titleLine2}>{item.titleLine2}</Text>
-        <Text style={S.subtitle}>{item.subtitle}</Text>
+
+      <View style={S.bottomStack}>
+        <GlassBox intensity={60}>
+          <Text style={S.smallLabel}>{item.smallLabel}</Text>
+        </GlassBox>
+
+        <GlassBox intensity={90}>
+          <Text style={S.titleLine1}>{item.titleLine1}</Text>
+        </GlassBox>
+
+        <GlassBox intensity={90}>
+          <Text style={S.titleLine2}>{item.titleLine2}</Text>
+        </GlassBox>
+
+        <GlassBox intensity={70}>
+          <Text style={S.subtitle}>{item.subtitle}</Text>
+        </GlassBox>
       </View>
     </ImageBackground>
   );
@@ -106,10 +144,7 @@ export default function SplashScreen({ onFinish }: SplashScreenProps) {
       <View style={S.footer} pointerEvents="box-none">
         <View style={S.dotsRow}>
           {PAGES.map((_, i) => (
-            <View
-              key={i}
-              style={[S.dot, i === currentPage && S.dotActive]}
-            />
+            <View key={i} style={[S.dot, i === currentPage && S.dotActive]} />
           ))}
         </View>
 
@@ -136,45 +171,81 @@ export default function SplashScreen({ onFinish }: SplashScreenProps) {
 
 const S = StyleSheet.create({
   screen: { flex: 1, backgroundColor: '#0F172A' },
+
   scrim: {
     ...StyleSheet.absoluteFillObject,
-    backgroundColor: 'rgba(0,0,0,0.45)',
+    backgroundColor: 'rgba(0,0,0,0.25)',
   },
-  bottomContent: {
+
+  bottomStack: {
     position: 'absolute',
-    bottom: 140,
-    left: 32,
-    right: 32,
+    bottom: 130,
+    left: 20,
+    right: 20,
+    gap: 10,
+    alignItems: 'flex-start',
   },
+
+  // Dense glass box — consistent dark frosted look
+  glassBox: {
+    borderRadius: 16,
+    overflow: 'hidden',
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.15)',
+    backgroundColor: 'rgba(15,23,42,0.35)',
+    shadowColor: '#000',
+    shadowOpacity: 0.3,
+    shadowRadius: 14,
+    shadowOffset: { width: 0, height: 8 },
+    elevation: 10,
+  },
+
+  // Single flat overlay — no bright spots
+  glassOverlay: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: 'rgba(15,23,42,0.4)',
+  },
+
+  glassInner: {
+    paddingHorizontal: 18,
+    paddingVertical: 12,
+  },
+
   smallLabel: {
-    color: 'rgba(255,255,255,0.75)',
-    fontSize: 12,
+    fontFamily: FONT_BOLD,
+    color: '#FFFFFF',
+    fontSize: 11,
     fontWeight: '700',
     letterSpacing: 4,
     textTransform: 'uppercase',
-    marginBottom: 12,
+    includeFontPadding: false,
   },
   titleLine1: {
+    fontFamily: FONT_MEDIUM,
     color: '#FFFFFF',
-    fontSize: 28,
-    fontWeight: '500',
-    letterSpacing: -0.3,
+    fontSize: 24,
+    fontWeight: '600',
+    letterSpacing: 0,
+    includeFontPadding: false,
   },
   titleLine2: {
-    color: '#0EA5E9',
-    fontSize: 38,
-    fontWeight: '800',
-    letterSpacing: -0.8,
-    lineHeight: 44,
-    marginBottom: 14,
+    fontFamily: FONT_BOLD,
+    color: '#FFFFFF',
+    fontSize: 30,
+    fontWeight: '700',
+    letterSpacing: 0,
+    lineHeight: 36,
+    includeFontPadding: false,
   },
   subtitle: {
-    color: 'rgba(255,255,255,0.85)',
-    fontSize: 15,
+    fontFamily: FONT_REGULAR,
+    color: 'rgba(255,255,255,0.92)',
+    fontSize: 14,
     fontWeight: '400',
-    lineHeight: 22,
-    maxWidth: '90%',
+    lineHeight: 20,
+    includeFontPadding: false,
   },
+
   footer: {
     position: 'absolute',
     bottom: 0,
@@ -198,11 +269,11 @@ const S = StyleSheet.create({
     width: 60,
     height: 60,
     borderRadius: 30,
-    backgroundColor: 'rgba(255,255,255,0.2)',
+    backgroundColor: 'rgba(15,23,42,0.5)',
     alignItems: 'center',
     justifyContent: 'center',
     borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.5)',
+    borderColor: 'rgba(255,255,255,0.35)',
   },
   ctaBtn: {
     paddingHorizontal: 28,
@@ -212,6 +283,17 @@ const S = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
+    shadowColor: '#0EA5E9',
+    shadowOpacity: 0.4,
+    shadowRadius: 12,
+    shadowOffset: { width: 0, height: 6 },
+    elevation: 8,
   },
-  ctaText: { color: '#FFFFFF', fontSize: 16, fontWeight: '700' },
+  ctaText: {
+    fontFamily: FONT_BOLD,
+    color: '#FFFFFF',
+    fontSize: 16,
+    fontWeight: '700',
+    includeFontPadding: false,
+  },
 });
