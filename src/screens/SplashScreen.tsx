@@ -1,181 +1,156 @@
-import { useEffect, useRef } from 'react';
-import { View, Text, StyleSheet, Pressable, Animated, Easing, Dimensions } from 'react-native';
+import { useRef, useState } from 'react';
+import { View, Text, StyleSheet, Pressable, FlatList, Dimensions } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
+import { useHapticFeedback } from '@/lib/haptics';
 
 const { width: SCREEN_W } = Dimensions.get('window');
-const CIRCLE_SIZE = 280;
+
+const PAGES = [
+  {
+    id: 1,
+    bg: '#0EA5E9',
+    accent: '#FFFFFF',
+    titleLine1: 'Welcome to',
+    titleLine2: 'FAIAD BERGIN',
+    subtitle: 'Your complete HSE management platform for the field.',
+    showLogo: true,
+  },
+  {
+    id: 2,
+    bg: '#0F172A',
+    accent: '#0EA5E9',
+    titleLine1: 'Safety.',
+    titleLine2: 'Precision. Excellence.',
+    subtitle: 'Track assets, actions, and inspections in real time.',
+    showLogo: false,
+  },
+  {
+    id: 3,
+    bg: '#16A34A',
+    accent: '#FFFFFF',
+    titleLine1: 'Ready to',
+    titleLine2: 'get started?',
+    subtitle: 'Tap below to enter the dashboard.',
+    showLogo: false,
+    isLast: true,
+  },
+] as const;
+
+type OnboardingPage = (typeof PAGES)[number];
 
 interface SplashScreenProps {
   onFinish?: () => void;
 }
 
 export default function SplashScreen({ onFinish }: SplashScreenProps) {
-  const topBarOpacity = useRef(new Animated.Value(0)).current;
-  const circleScale = useRef(new Animated.Value(0.6)).current;
-  const heroOpacity = useRef(new Animated.Value(0)).current;
-  const heroScale = useRef(new Animated.Value(0.9)).current;
-  const icon1Opacity = useRef(new Animated.Value(0)).current;
-  const icon2Opacity = useRef(new Animated.Value(0)).current;
-  const icon3Opacity = useRef(new Animated.Value(0)).current;
-  const icon4Opacity = useRef(new Animated.Value(0)).current;
-  const icon5Opacity = useRef(new Animated.Value(0)).current;
-  const taglineOpacity = useRef(new Animated.Value(0)).current;
-  const taglineSlide = useRef(new Animated.Value(12)).current;
-  const head1Opacity = useRef(new Animated.Value(0)).current;
-  const head1Slide = useRef(new Animated.Value(16)).current;
-  const head2Opacity = useRef(new Animated.Value(0)).current;
-  const head2Slide = useRef(new Animated.Value(16)).current;
-  const btnScale = useRef(new Animated.Value(0.7)).current;
-  const dotsOpacity = useRef(new Animated.Value(0)).current;
+  const [currentPage, setCurrentPage] = useState(0);
+  const listRef = useRef<FlatList<OnboardingPage>>(null);
+  const haptics = useHapticFeedback();
 
-  useEffect(() => {
-    const anims: Animated.CompositeAnimation[] = [];
+  const goToNext = () => {
+    haptics.impactMedium();
+    if (currentPage < PAGES.length - 1) {
+      const nextPage = currentPage + 1;
+      listRef.current?.scrollToIndex({ index: nextPage, animated: true });
+      setCurrentPage(nextPage);
+      return;
+    }
 
-    const run = (
-      value: Animated.Value,
-      toValue: number,
-      duration: number,
-      delay: number,
-      easing?: (v: number) => number,
-    ) => {
-      const a = Animated.timing(value, {
-        toValue,
-        duration,
-        delay,
-        easing: easing ?? Easing.out(Easing.cubic),
-        useNativeDriver: true,
-      });
-      a.start();
-      anims.push(a);
-    };
+    haptics.notificationSuccess();
+    onFinish?.();
+  };
 
-    run(topBarOpacity, 1, 300, 0);
-    run(circleScale, 1.0, 500, 100, Easing.out(Easing.back(1.2)));
-    run(heroOpacity, 1, 400, 400);
-    run(heroScale, 1.0, 400, 400);
-    run(icon1Opacity, 1, 300, 500);
-    run(icon2Opacity, 1, 300, 560);
-    run(icon3Opacity, 1, 300, 620);
-    run(icon4Opacity, 1, 300, 680);
-    run(icon5Opacity, 1, 300, 740);
-    run(taglineOpacity, 1, 400, 800);
-    run(taglineSlide, 0, 400, 800);
-    run(head1Opacity, 1, 400, 1000);
-    run(head1Slide, 0, 400, 1000);
-    run(head2Opacity, 1, 450, 1150);
-    run(head2Slide, 0, 450, 1150);
-    run(btnScale, 1.0, 400, 1400, Easing.out(Easing.back(1.5)));
-    run(dotsOpacity, 1, 300, 1400);
+  const handleScrollEnd = (event: any) => {
+    const pageIndex = Math.round(event.nativeEvent.contentOffset.x / SCREEN_W);
+    if (pageIndex !== currentPage && pageIndex >= 0 && pageIndex < PAGES.length) {
+      setCurrentPage(pageIndex);
+      haptics.selection();
+    }
+  };
 
-    const timer = setTimeout(() => {
-      onFinish?.();
-    }, 2500);
-
-    return () => {
-      clearTimeout(timer);
-      anims.forEach((a) => a.stop());
-    };
-  }, [onFinish]);
+  const renderPage = ({ item }: { item: OnboardingPage }) => (
+    <View style={[S.page, { backgroundColor: item.bg, width: SCREEN_W }]}>
+      <View style={S.pageContent}>
+        {item.showLogo && <Text style={S.logoMark}>FB</Text>}
+        <Text style={[S.titleLine1, { color: item.id === 2 ? '#94A3B8' : '#FFFFFFDD' }]}>
+          {item.titleLine1}
+        </Text>
+        <Text style={[S.titleLine2, { color: item.accent }]}>
+          {item.titleLine2}
+        </Text>
+        <Text style={[S.subtitle, { color: item.id === 2 ? '#94A3B8' : '#FFFFFFCC' }]}>
+          {item.subtitle}
+        </Text>
+      </View>
+    </View>
+  );
 
   return (
     <SafeAreaView style={S.screen} edges={['top', 'bottom']}>
-      <Animated.View style={[S.topBar, { opacity: topBarOpacity }]}>
-        <Ionicons name="menu-outline" size={26} color="#0F172A" />
-        <Ionicons name="notifications-outline" size={24} color="#0F172A" />
-      </Animated.View>
+      <FlatList
+        ref={listRef}
+        data={PAGES}
+        renderItem={renderPage}
+        keyExtractor={(item) => String(item.id)}
+        horizontal
+        pagingEnabled
+        showsHorizontalScrollIndicator={false}
+        onMomentumScrollEnd={handleScrollEnd}
+        bounces={false}
+        getItemLayout={(_, index) => ({ length: SCREEN_W, offset: SCREEN_W * index, index })}
+      />
 
-      <View style={S.centerArea}>
-        <Animated.View style={[S.scatterIcon, S.iconTL, { opacity: icon1Opacity }]} pointerEvents="none">
-          <Ionicons name="construct-outline" size={18} color="#CBD5E1" />
-        </Animated.View>
-        <Animated.View style={[S.scatterIcon, S.iconTR, { opacity: icon2Opacity }]} pointerEvents="none">
-          <Ionicons name="shield-checkmark-outline" size={16} color="#CBD5E1" />
-        </Animated.View>
-        <Animated.View style={[S.scatterIcon, S.iconBL, { opacity: icon3Opacity }]} pointerEvents="none">
-          <Ionicons name="document-text-outline" size={16} color="#CBD5E1" />
-        </Animated.View>
-        <Animated.View style={[S.scatterIcon, S.iconBR, { opacity: icon4Opacity }]} pointerEvents="none">
-          <Ionicons name="car-outline" size={18} color="#CBD5E1" />
-        </Animated.View>
-        <Animated.View style={[S.scatterIcon, S.iconMid, { opacity: icon5Opacity }]} pointerEvents="none">
-          <Ionicons name="flash-outline" size={14} color="#CBD5E1" />
-        </Animated.View>
+      <View style={S.footer} pointerEvents="box-none">
+        <View style={S.dotsRow}>
+          {PAGES.map((page, index) => (
+            <View
+              key={page.id}
+              style={[
+                S.dot,
+                index === currentPage && S.dotActive,
+                { backgroundColor: index === currentPage ? '#FFFFFF' : '#FFFFFF66' },
+              ]}
+            />
+          ))}
+        </View>
 
-        <Animated.View style={[S.circle, { transform: [{ scale: circleScale }] }]}>
-          <Animated.View
-            style={[
-              S.heroWrap,
-              { opacity: heroOpacity, transform: [{ scale: heroScale }] },
-            ]}
-          >
-            {/* Replace this View with: <Image source={require('../../assets/icon.png')} style={S.heroImage} resizeMode="contain" /> once assets/icon.png exists */}
-            <View style={S.heroFallback}>
-              <Text style={S.heroLetter}>A</Text>
+        <Pressable
+          onPress={goToNext}
+          style={({ pressed }) => [
+            currentPage === PAGES.length - 1 ? S.ctaBtn : S.arrowBtn,
+            pressed && S.pressed,
+          ]}
+        >
+          {currentPage === PAGES.length - 1 ? (
+            <View style={S.ctaContent}>
+              <Text style={S.ctaText}>Get Started</Text>
+              <Ionicons name="arrow-forward" size={18} color="#FFFFFF" />
             </View>
-          </Animated.View>
-        </Animated.View>
-      </View>
-
-      <View style={S.bottomSection}>
-        <Animated.Text
-          style={[S.tagline, { opacity: taglineOpacity, transform: [{ translateY: taglineSlide }] }]}
-        >
-          SAFETY · PRECISION · EXCELLENCE
-        </Animated.Text>
-
-        <Animated.Text
-          style={[S.headlineSmall, { opacity: head1Opacity, transform: [{ translateY: head1Slide }] }]}
-        >
-          Building
-        </Animated.Text>
-
-        <Animated.Text
-          style={[S.headlineBig, { opacity: head2Opacity, transform: [{ translateY: head2Slide }] }]}
-        >
-          THE FUTURE
-        </Animated.Text>
-      </View>
-
-      <View style={S.footer}>
-        <Animated.View style={[S.dotsRow, { opacity: dotsOpacity }]}>
-          <View style={[S.dot, S.dotActive]} />
-          <View style={S.dot} />
-          <View style={S.dot} />
-        </Animated.View>
-
-        <Animated.View style={{ transform: [{ scale: btnScale }] }}>
-          <Pressable onPress={() => onFinish?.()} style={S.nextBtn}>
-            <Ionicons name="chevron-forward" size={24} color="#FFFFFF" />
-          </Pressable>
-        </Animated.View>
+          ) : (
+            <Ionicons name="arrow-forward" size={26} color="#FFFFFF" />
+          )}
+        </Pressable>
       </View>
     </SafeAreaView>
   );
 }
 
 const S = StyleSheet.create({
-  screen: { flex: 1, backgroundColor: '#FFFFFF', paddingHorizontal: 24 },
-  topBar: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingTop: 12, paddingBottom: 20 },
-  centerArea: { flex: 1, alignItems: 'center', justifyContent: 'center', position: 'relative' },
-  circle: { width: CIRCLE_SIZE, height: CIRCLE_SIZE, borderRadius: CIRCLE_SIZE / 2, backgroundColor: '#0EA5E9', alignItems: 'center', justifyContent: 'center', overflow: 'hidden' },
-  heroWrap: { alignItems: 'center', justifyContent: 'center' },
-  heroImage: { width: 200, height: 200 },
-  heroFallback: { width: 200, height: 200, borderRadius: 100, backgroundColor: '#FFFFFF', alignItems: 'center', justifyContent: 'center' },
-  heroLetter: { fontSize: 80, fontWeight: '800', color: '#0EA5E9', letterSpacing: -3 },
-  scatterIcon: { position: 'absolute', zIndex: 2 },
-  iconTL: { top: '15%', left: '5%' },
-  iconTR: { top: '22%', right: '8%' },
-  iconBL: { bottom: '22%', left: '8%' },
-  iconBR: { bottom: '15%', right: '5%' },
-  iconMid: { top: '10%', right: '25%' },
-  bottomSection: { paddingBottom: 30 },
-  tagline: { fontSize: 11, fontWeight: '700', color: '#94A3B8', letterSpacing: 3, marginBottom: 12 },
-  headlineSmall: { fontSize: 22, fontWeight: '400', color: '#0F172A', marginBottom: 2 },
-  headlineBig: { fontSize: 42, fontWeight: '800', color: '#0EA5E9', letterSpacing: -1, lineHeight: 46 },
-  footer: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingBottom: 24 },
+  screen: { flex: 1, backgroundColor: '#0EA5E9' },
+  page: { height: '100%', justifyContent: 'flex-end', paddingHorizontal: 32, paddingBottom: 140 },
+  pageContent: { marginBottom: 40 },
+  logoMark: { fontSize: 28, fontWeight: '800', color: '#FFFFFF', letterSpacing: 2, marginBottom: 32 },
+  titleLine1: { fontSize: 32, fontWeight: '500', letterSpacing: -0.5, marginBottom: 4 },
+  titleLine2: { fontSize: 42, fontWeight: '800', letterSpacing: -1, lineHeight: 46, marginBottom: 16 },
+  subtitle: { fontSize: 15, fontWeight: '400', lineHeight: 22, maxWidth: '90%' },
+  footer: { position: 'absolute', bottom: 0, left: 0, right: 0, flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingHorizontal: 32, paddingBottom: 40, paddingTop: 20 },
   dotsRow: { flexDirection: 'row', gap: 6, alignItems: 'center' },
-  dot: { width: 6, height: 6, borderRadius: 3, backgroundColor: '#E2E8F0' },
-  dotActive: { backgroundColor: '#0EA5E9', width: 20 },
-  nextBtn: { width: 56, height: 56, borderRadius: 28, backgroundColor: '#0EA5E9', alignItems: 'center', justifyContent: 'center', shadowColor: '#0EA5E9', shadowOpacity: 0.3, shadowRadius: 12, shadowOffset: { width: 0, height: 6 }, elevation: 6 },
+  dot: { width: 8, height: 8, borderRadius: 4 },
+  dotActive: { width: 28 },
+  arrowBtn: { width: 60, height: 60, borderRadius: 30, backgroundColor: 'rgba(255,255,255,0.2)', alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderColor: 'rgba(255,255,255,0.4)' },
+  ctaBtn: { paddingHorizontal: 24, height: 60, borderRadius: 30, backgroundColor: 'rgba(0,0,0,0.3)', alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderColor: 'rgba(255,255,255,0.4)' },
+  ctaContent: { flexDirection: 'row', alignItems: 'center', gap: 8 },
+  ctaText: { color: '#FFFFFF', fontSize: 16, fontWeight: '700', letterSpacing: 0.3 },
+  pressed: { opacity: 0.85 },
 });
